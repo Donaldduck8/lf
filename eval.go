@@ -875,6 +875,12 @@ func (e *setExpr) eval(app *app, args []string) {
 			return
 		}
 		gOpts.wrapscroll = !gOpts.wrapscroll
+	case "dangerousExts":
+		if e.val == "" {
+			gOpts.dangerousExts = []string{}
+			return
+		}
+		gOpts.dangerousExts = strings.Split(e.val, ":")
 	default:
 		// any key with the prefix user_ is accepted as a user defined option
 		if strings.HasPrefix(e.opt, "user_") {
@@ -1392,6 +1398,19 @@ func (e *callExpr) eval(app *app, args []string) {
 		if err != nil {
 			app.ui.echoerrf("opening: %s", err)
 			return
+		}
+
+		extensionsToCheck := gOpts.dangerousExts
+		currExt := filepath.Ext(curr.path)
+		currExt = strings.ToLower(currExt)
+
+		for _, ext := range extensionsToCheck {
+			if !strings.HasPrefix(ext, ".") {
+				ext = "." + ext
+			}
+			if ext == currExt {
+				return
+			}
 		}
 
 		if curr.IsDir() {
