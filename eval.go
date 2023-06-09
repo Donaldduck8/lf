@@ -1456,6 +1456,30 @@ func (e *callExpr) eval(app *app, args []string) {
 		if cmd, ok := gOpts.cmds["open"]; ok {
 			cmd.eval(app, e.args)
 		}
+	case "open-dir":
+		if !app.nav.init {
+			return
+		}
+		curr, err := app.nav.currFile()
+		if err != nil {
+			app.ui.echoerrf("opening: %s", err)
+			return
+		}
+
+		if curr.IsDir() {
+			resetIncCmd(app)
+			preChdir(app)
+			err := app.nav.open()
+			if err != nil {
+				app.ui.echoerrf("opening directory: %s", err)
+				return
+			}
+			app.ui.loadFile(app, true)
+			app.ui.loadFileInfo(app.nav)
+			restartIncCmd(app)
+			onChdir(app)
+			return
+		}
 	case "jump-prev":
 		resetIncCmd(app)
 		preChdir(app)
