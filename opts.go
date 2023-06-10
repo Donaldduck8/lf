@@ -61,7 +61,6 @@ var gOpts struct {
 	errorfmt         string
 	filesep          string
 	ifs              string
-	previewer        string
 	cleaner          string
 	promptfmt        string
 	selmode          string
@@ -89,6 +88,7 @@ var gOpts struct {
 	tagfmt           string
 
 	dangerousExts []string
+	previewers    map[string]string
 }
 
 func init() {
@@ -125,7 +125,6 @@ func init() {
 	gOpts.errorfmt = "\033[7;31;47m"
 	gOpts.filesep = "\n"
 	gOpts.ifs = ""
-	gOpts.previewer = ""
 	gOpts.cleaner = ""
 	gOpts.promptfmt = "\033[32;1m%u@%h\033[0m:\033[34;1m%d\033[0m\033[1m%f\033[0m"
 	gOpts.selmode = "all"
@@ -148,6 +147,7 @@ func init() {
 	gOpts.tagfmt = "\033[31m"
 
 	gOpts.dangerousExts = []string{}
+	gOpts.previewers = map[string]string{}
 
 	gOpts.keys = make(map[string]expr)
 

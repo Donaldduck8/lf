@@ -625,8 +625,6 @@ func (e *setExpr) eval(app *app, args []string) {
 			return
 		}
 		gOpts.preview = !gOpts.preview
-	case "previewer":
-		gOpts.previewer = replaceTilde(e.val)
 	case "promptfmt":
 		gOpts.promptfmt = e.val
 	case "ratios":
@@ -881,6 +879,13 @@ func (e *setExpr) eval(app *app, args []string) {
 			return
 		}
 		gOpts.dangerousExts = strings.Split(e.val, ":")
+	case "previewers":
+		if e.val == "" {
+			gOpts.previewers = map[string]string{}
+			return
+		}
+
+		gOpts.previewers = parseMapFromString(e.val)
 	default:
 		// any key with the prefix user_ is accepted as a user defined option
 		if strings.HasPrefix(e.opt, "user_") {

@@ -298,6 +298,27 @@ func max(a, b int) int {
 	return b
 }
 
+func parseMapFromString(input string) map[string]string {
+	result := make(map[string]string)
+	pairs := strings.Split(input, ", ")
+
+	for _, pair := range pairs {
+		keyValue := strings.SplitN(pair, ":", 2)
+		if len(keyValue) == 2 {
+			keys := strings.Split(keyValue[0], "|")
+			value := strings.TrimSpace(keyValue[1])
+
+			for _, key := range keys {
+				key = strings.TrimSpace(key)
+				key = strings.ToLower(key)
+				result[key] = value
+			}
+		}
+	}
+
+	return result
+}
+
 // We don't need no generic code
 // We don't need no type control
 // No dark templates in compiler

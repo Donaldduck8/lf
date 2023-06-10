@@ -797,12 +797,29 @@ func (nav *nav) preview(path string, win *win) {
 	reg := &reg{loadTime: time.Now(), path: path}
 	defer func() { nav.regChan <- reg }()
 
+	currExt := filepath.Ext(path)
+	currExt = strings.ToLower(currExt)
+
+	if len(currExt) > 0 && currExt[0] == '.' {
+		currExt = currExt[1:]
+	}
+
 	var reader io.Reader
 
-	if len(gOpts.previewer) != 0 {
+	// Check if the current extension has a previewer defined
+	previewer, exists := gOpts.previewers[currExt]
+	starPreviewer, starExists := gOpts.previewers["*"]
+
+	if starExists {
+		previewer = starPreviewer
+	}
+
+	if len(gOpts.previewers) != 0 && (exists || starExists) {
+		log.Printf("Previewer found: %s", previewer)
+
 		nav.exportFiles()
 		exportOpts()
-		cmd := exec.Command(gOpts.previewer, path,
+		cmd := exec.Command(previewer, path,
 			strconv.Itoa(win.w),
 			strconv.Itoa(win.h),
 			strconv.Itoa(win.x),
@@ -834,6 +851,7 @@ func (nav *nav) preview(path string, win *win) {
 		}()
 		defer out.Close()
 		reader = out
+
 	} else {
 		f, err := os.Open(path)
 		if err != nil {
