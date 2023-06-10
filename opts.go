@@ -87,6 +87,8 @@ var gOpts struct {
 	tempmarks        string
 	numberfmt        string
 	tagfmt           string
+
+	dangerousExts []string
 }
 
 func init() {
@@ -144,6 +146,8 @@ func init() {
 	gOpts.tempmarks = "'"
 	gOpts.numberfmt = "\033[33m"
 	gOpts.tagfmt = "\033[31m"
+
+	gOpts.dangerousExts = []string{}
 
 	gOpts.keys = make(map[string]expr)
 

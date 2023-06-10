@@ -875,6 +875,12 @@ func (e *setExpr) eval(app *app, args []string) {
 			return
 		}
 		gOpts.wrapscroll = !gOpts.wrapscroll
+	case "dangerousExts":
+		if e.val == "" {
+			gOpts.dangerousExts = []string{}
+			return
+		}
+		gOpts.dangerousExts = strings.Split(e.val, ":")
 	default:
 		// any key with the prefix user_ is accepted as a user defined option
 		if strings.HasPrefix(e.opt, "user_") {
@@ -1394,6 +1400,19 @@ func (e *callExpr) eval(app *app, args []string) {
 			return
 		}
 
+		extensionsToCheck := gOpts.dangerousExts
+		currExt := filepath.Ext(curr.path)
+		currExt = strings.ToLower(currExt)
+
+		for _, ext := range extensionsToCheck {
+			if !strings.HasPrefix(ext, ".") {
+				ext = "." + ext
+			}
+			if ext == currExt {
+				return
+			}
+		}
+
 		if curr.IsDir() {
 			resetIncCmd(app)
 			preChdir(app)
@@ -1436,6 +1455,30 @@ func (e *callExpr) eval(app *app, args []string) {
 
 		if cmd, ok := gOpts.cmds["open"]; ok {
 			cmd.eval(app, e.args)
+		}
+	case "open-dir":
+		if !app.nav.init {
+			return
+		}
+		curr, err := app.nav.currFile()
+		if err != nil {
+			app.ui.echoerrf("opening: %s", err)
+			return
+		}
+
+		if curr.IsDir() {
+			resetIncCmd(app)
+			preChdir(app)
+			err := app.nav.open()
+			if err != nil {
+				app.ui.echoerrf("opening directory: %s", err)
+				return
+			}
+			app.ui.loadFile(app, true)
+			app.ui.loadFileInfo(app.nav)
+			restartIncCmd(app)
+			onChdir(app)
+			return
 		}
 	case "jump-prev":
 		resetIncCmd(app)
