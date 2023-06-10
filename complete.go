@@ -202,7 +202,7 @@ var (
 		"ifs",
 		"info",
 		"numberfmt",
-		"previewer",
+		"previewers",
 		"cleaner",
 		"promptfmt",
 		"ratios",

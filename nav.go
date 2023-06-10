@@ -666,7 +666,7 @@ func (nav *nav) exportFiles() {
 func (nav *nav) dirPreviewLoop(ui *ui) {
 	var prevPath string
 	for dir := range nav.dirPreviewChan {
-		if dir == nil && len(gOpts.previewer) != 0 && len(gOpts.cleaner) != 0 && nav.volatilePreview {
+		if dir == nil && len(gOpts.previewers) != 0 && len(gOpts.cleaner) != 0 && nav.volatilePreview {
 			cmd := exec.Command(gOpts.cleaner, prevPath)
 			if err := cmd.Run(); err != nil {
 				log.Printf("cleaning preview: %s", err)
@@ -694,7 +694,7 @@ func (nav *nav) previewLoop(ui *ui) {
 			}
 		}
 		win := ui.wins[len(ui.wins)-1]
-		if clear && len(gOpts.previewer) != 0 && len(gOpts.cleaner) != 0 && nav.volatilePreview {
+		if clear && len(gOpts.previewers) != 0 && len(gOpts.cleaner) != 0 && nav.volatilePreview {
 			nav.exportFiles()
 			exportOpts()
 			cmd := exec.Command(gOpts.cleaner, prev,
@@ -739,10 +739,12 @@ func (nav *nav) previewDir(dir *dir, win *win) {
 
 	var reader io.Reader
 
-	if len(gOpts.previewer) != 0 {
+	dirPreviewer, dirPreviewerExists := gOpts.previewers["/"]
+
+	if dirPreviewerExists {
 		nav.exportFiles()
 		exportOpts()
-		cmd := exec.Command(gOpts.previewer, dir.path,
+		cmd := exec.Command(dirPreviewer, dir.path,
 			strconv.Itoa(win.w),
 			strconv.Itoa(win.h),
 			strconv.Itoa(win.x),

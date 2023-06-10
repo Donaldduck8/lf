@@ -369,7 +369,9 @@ func (win *win) printDir(screen tcell.Screen, dir *dir, context *dirContext, dir
 		return
 	}
 
-	if dirStyle.role == Preview && gOpts.dirpreviews && len(gOpts.previewer) > 0 {
+	_, dirPreviewerExists := gOpts.previewers["/"]
+
+	if dirStyle.role == Preview && gOpts.dirpreviews && dirPreviewerExists {
 		// Print previewer result instead of default directory print operation.
 		st := tcell.StyleDefault
 		for i, l := range dir.lines {

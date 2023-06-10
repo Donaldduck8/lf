@@ -152,7 +152,6 @@ The following options can be used to customize the behavior of lf:
 	period           int       (default 0)
 	preserve         []string  (default "mode")
 	preview          bool      (default true)
-	previewer        string    (default '')
 	promptfmt        string    (default "\033[32;1m%u@%h\033[0m:\033[34;1m%d\033[0m\033[1m%f\033[0m")
 	ratios           []int     (default '1:2:3')
 	relativenumber   bool      (default false)
@@ -176,6 +175,8 @@ The following options can be used to customize the behavior of lf:
 	wrapscan         bool      (default true)
 	wrapscroll       bool      (default false)
 	user_{option}    string    (default none)
+
+	previewers       string (e.g. ""mp3|wav:C:/Users/donald/AppData/Local/lf/audio-preview.bat"")
 
 The following environment variables are exported for shell commands:
 
