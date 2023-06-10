@@ -2530,6 +2530,20 @@ func (e *callExpr) eval(app *app, args []string) {
 		app.runPagerOn(listBinds(gOpts.cmdkeys))
 	case "jumps":
 		app.runPagerOn(listJumps(app.nav.jumpList, app.nav.jumpListInd))
+	case "convert":
+		if err := app.ui.suspend(); err != nil {
+			log.Printf("suspend: %s", err)
+		}
+		defer func() {
+			if err := app.ui.resume(); err != nil {
+				app.quit()
+				os.Exit(3)
+			}
+		}()
+		parseAndConvert(strings.Join(e.args, " "))
+		anyKey()
+		app.ui.loadFile(app, true)
+		app.nav.renew()
 	default:
 		cmd, ok := gOpts.cmds[e.name]
 		if !ok {
