@@ -1,0 +1,29 @@
+set filesep " "
+
+# Quick rename bound to 'r'
+cmd rename %sh -c 'mv -i %f% $0'
+map r push :rename<space>
+
+# Quick reload LFRC with f5
+map <f-5> push :source<space>\%localappdata\%/lf/lfrc<enter>
+
+# Use a and A to create files and directories
+# cmd createfile %sh -c 'touch $0'
+# cmd createdir %sh -c 'mkdir $0'
+# map a push :createfile<space>
+# map A push :createdir<space>
+
+# Open explorer in current directory
+map S push &start.<enter>
+
+# Copy file path
+# Todo: make this not have "" around the path
+map Y %echo %fx% | clip
+
+# Archives - DOES NOT WORK ATM
+# cmd zip %sh -c '7z a $0 %fx%'
+# cmd extract_here %sh -c '7z e %f%'
+# cmd extract_to %sh -c '7z e %f% -o$0'
+
+# Prevent right arrow from opening files
+map <right> open-dir
