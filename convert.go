@@ -155,6 +155,73 @@ func convertMethylphenidates(value float64, fromUnit string, fromUnitExtra strin
 	tab.Print(os.Stdout)
 }
 
+// Add a new function for digital storage conversion
+func convertDigitalStorage(value float64, fromUnit string) {
+	var b, kb, mb, gb, tb float64
+	switch strings.ToLower(fromUnit) {
+	case "b":
+		b = value
+		kb = value / 1024
+		mb = value / 1048576 // 1024^2
+		gb = value / 1073741824 // 1024^3
+		tb = value / 1099511627776 // 1024^4
+	case "kb":
+		b = value * 1024
+		kb = value
+		mb = value / 1024
+		gb = value / 1048576 // 1024^2
+		tb = value / 1073741824 // 1024^3
+	case "mb":
+		b = value * 1048576 // 1024^2
+		kb = value * 1024
+		mb = value
+		gb = value / 1024
+		tb = value / 1048576 // 1024^2
+	case "gb":
+		b = value * 1073741824 // 1024^3
+		kb = value * 1048576 // 1024^2
+		mb = value * 1024
+		gb = value
+		tb = value / 1024
+	case "tb":
+		b = value * 1099511627776 // 1024^4
+		kb = value * 1073741824 // 1024^3
+		mb = value * 1048576 // 1024^2
+		gb = value * 1024
+		tb = value
+	default:
+		fmt.Println("Unknown unit")
+		return
+	}
+
+	tab := tabulate.New(tabulate.Unicode)
+	tab.Header("Unit").SetAlign(tabulate.MR)
+	tab.Header("Value").SetAlign(tabulate.MR)
+
+	row := tab.Row()
+	row.Column("B")
+	row.Column(fmt.Sprintf("%.2fB", b))
+
+	row = tab.Row()
+	row.Column("KB")
+	row.Column(fmt.Sprintf("%.2fKB", kb))
+
+	row = tab.Row()
+	row.Column("MB")
+	row.Column(fmt.Sprintf("%.2fMB", mb))
+
+	row = tab.Row()
+	row.Column("GB")
+	row.Column(fmt.Sprintf("%.2fGB", gb))
+
+	row = tab.Row()
+	row.Column("TB")
+	row.Column(fmt.Sprintf("%.2fTB", tb))
+
+	tab.Print(os.Stdout)
+}
+
+// Modify the parseAndConvert function to handle digital storage units
 func parseAndConvert(input string) {
 	regexPattern := `([\d\.]+?)([a-zA-Z]+)\s*?(.*?)`
 	regex := regexp.MustCompile(regexPattern)
@@ -195,6 +262,8 @@ func parseAndConvert(input string) {
 
 	case "c", "f", "k":
 		convertTemperature(value, unit)
-	}
 
+	case "b", "kb", "mb", "gb", "tb":
+		convertDigitalStorage(value, unit)
+	}
 }
