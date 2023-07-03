@@ -101,7 +101,11 @@ func detachedCommand(name string, arg ...string) *exec.Cmd {
 }
 
 func shellCommand(s string, args []string) *exec.Cmd {
-	args = append([]string{gOpts.shellflag, s}, args...)
+	if len(s) == 0 {
+		args = append([]string{gOpts.shellflag}, args...)
+	} else {
+		args = append([]string{gOpts.shellflag, s}, args...)
+	}
 
 	args = append(gOpts.shellopts, args...)
 
