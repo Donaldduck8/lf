@@ -12,6 +12,7 @@ import (
 	"strings"
 	"syscall"
 	"time"
+	"unicode"
 )
 
 type cmdItem struct {
@@ -500,6 +501,27 @@ func (app *app) runCmdSync(cmd *exec.Cmd, pause_after bool) {
 	app.nav.renew()
 }
 
+func parseArgs(command string) []string {
+	inQuotes := false
+	f := func(c rune) bool {
+		if c == '"' {
+			inQuotes = !inQuotes
+		}
+		// split on spaces not within quotes
+		return !inQuotes && unicode.IsSpace(c)
+	}
+
+	// Split the command into arguments
+	args := strings.FieldsFunc(command, f)
+
+	// Remove quotes from arguments
+	for i, arg := range args {
+		args[i] = strings.Trim(arg, `"`)
+	}
+
+	return args
+}
+
 // This function is used to run a shell command. Modes are as follows:
 //
 //	Prefix  Wait  Async  Stdin  Stdout  Stderr  UI action
@@ -511,6 +533,17 @@ func (app *app) runShell(s string, args []string, prefix string) {
 	app.nav.exportFiles()
 	app.ui.exportSizes()
 	exportOpts()
+
+	// Break up s into arguments
+	if len(args) == 0 {
+		args = parseArgs(s)
+		s = ""
+	}
+
+	log.Printf("Number of arguments: %d", len(args))
+	for i := 0; i < len(args); i++ {
+		log.Printf("Argument: %s", args[i])
+	}
 
 	cmd := shellCommand(s, args)
 
@@ -544,10 +577,24 @@ func (app *app) runShell(s string, args []string, prefix string) {
 		cmd.Stderr = cmd.Stdout
 	}
 
+	/* If you need to analyze output of command, uncomment this
+	var outbuf, errbuf strings.Builder // or bytes.Buffer
+	cmd.Stdout = &outbuf
+	cmd.Stderr = &errbuf
+	*/
+
 	shellSetPG(cmd)
 	if err = cmd.Start(); err != nil {
 		app.ui.echoerrf("running shell: %s", err)
 	}
+
+	/* If you need to analyze output of command, uncomment this
+	stdout := outbuf.String()
+	stderr := errbuf.String()
+
+	log.Printf("stdout of command: %s", stdout)
+	log.Printf("stderr of command: %s", stderr)
+	*/
 
 	switch prefix {
 	case "%":
