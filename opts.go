@@ -183,10 +183,10 @@ func init() {
 	gOpts.keys["t"] = &callExpr{"tag-toggle", nil, 1}
 	gOpts.keys["v"] = &callExpr{"invert", nil, 1}
 	gOpts.keys["u"] = &callExpr{"unselect", nil, 1}
-	gOpts.keys["y"] = &callExpr{"copy", nil, 1}
-	gOpts.keys["d"] = &callExpr{"cut", nil, 1}
-	gOpts.keys["c"] = &callExpr{"clear", nil, 1}
-	gOpts.keys["p"] = &callExpr{"paste", nil, 1}
+	gOpts.keys["<c-c>"] = &callExpr{"copy", nil, 1}
+	gOpts.keys["<c-x>"] = &callExpr{"cut", nil, 1}
+	gOpts.keys["<esc>"] = &callExpr{"clear", nil, 1}
+	gOpts.keys["<c-v>"] = &callExpr{"paste", nil, 1}
 	gOpts.keys["<c-l>"] = &callExpr{"redraw", nil, 1}
 	gOpts.keys["<c-r>"] = &callExpr{"reload", nil, 1}
 	gOpts.keys[":"] = &callExpr{"read", nil, 1}
@@ -198,7 +198,7 @@ func init() {
 	gOpts.keys["F"] = &callExpr{"find-back", nil, 1}
 	gOpts.keys[";"] = &callExpr{"find-next", nil, 1}
 	gOpts.keys[","] = &callExpr{"find-prev", nil, 1}
-	gOpts.keys["/"] = &callExpr{"search", nil, 1}
+	gOpts.keys["<c-f>"] = &callExpr{"search", nil, 1}
 	gOpts.keys["?"] = &callExpr{"search-back", nil, 1}
 	gOpts.keys["n"] = &callExpr{"search-next", nil, 1}
 	gOpts.keys["N"] = &callExpr{"search-prev", nil, 1}
@@ -239,9 +239,9 @@ func init() {
 	gOpts.cmdkeys["<backspace>"] = &callExpr{"cmd-delete-back", nil, 1}
 	gOpts.cmdkeys["<backspace2>"] = &callExpr{"cmd-delete-back", nil, 1}
 	gOpts.cmdkeys["<left>"] = &callExpr{"cmd-left", nil, 1}
-	gOpts.cmdkeys["<c-b>"] = &callExpr{"cmd-left", nil, 1}
+	//gOpts.cmdkeys["<c-b>"] = &callExpr{"cmd-left", nil, 1}
 	gOpts.cmdkeys["<right>"] = &callExpr{"cmd-right", nil, 1}
-	gOpts.cmdkeys["<c-f>"] = &callExpr{"cmd-right", nil, 1}
+	//gOpts.cmdkeys["<c-f>"] = &callExpr{"cmd-right", nil, 1}
 	gOpts.cmdkeys["<home>"] = &callExpr{"cmd-home", nil, 1}
 	gOpts.cmdkeys["<c-a>"] = &callExpr{"cmd-home", nil, 1}
 	gOpts.cmdkeys["<end>"] = &callExpr{"cmd-end", nil, 1}
