@@ -14,11 +14,17 @@ map <f-5> push :source<space>\%localappdata\%/lf/lfrc<enter>
 # map A push :createdir<space>
 
 # Open explorer in current directory
-map S push &start.<enter>
+map <c-o> push &start.<enter>
+
+map xi push &ida<space>%fx%<enter>
+map xv push &code<space>%fx%<enter>
 
 # Copy file path
 # Todo: make this not have "" around the path
 map Y %echo %fx% | clip
+
+cmd peek !emit %fx% | peek
+cmd pemeta !emit %fx% | pemeta
 
 # Archives - DOES NOT WORK ATM
 # cmd zip %sh -c '7z a $0 %fx%'
@@ -27,3 +33,13 @@ map Y %echo %fx% | clip
 
 # Prevent right arrow from opening files
 map <right> open-dir
+map <c-v> paste
+map <gt> paste
+
+:set number
+:set mouse
+:set icons
+:set relativenumber
+:set ignorecase
+:set info size:time
+:set drawbox
