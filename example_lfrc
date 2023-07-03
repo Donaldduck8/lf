@@ -16,8 +16,13 @@ map <f-5> push :source<space>\%localappdata\%/lf/lfrc<enter>
 # Open explorer in current directory
 map <c-o> push &start.<enter>
 
-map xi push &ida<space>%fx%<enter>
-map xv push &code<space>%fx%<enter>
+cmd ida32 push &<quote>C:/Program<space>Files/IDA<space>Pro<space>8.3/ida.exe<quote><space>%fx%<enter>
+cmd ida64 push &<quote>C:/Program<space>Files/IDA<space>Pro<space>8.3/ida64.exe<quote><space>%fx%<enter>
+cmd vscode push &code<space>%fx%<enter>
+
+map xi :ida64
+map xu :ida32
+map xv :vscode
 
 # Copy file path
 # Todo: make this not have "" around the path
