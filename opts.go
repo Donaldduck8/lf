@@ -183,6 +183,8 @@ func init() {
 	gOpts.keys["]"] = &callExpr{"jump-next", nil, 1}
 	gOpts.keys["<delete>"] = &callExpr{"delete", nil, 1}
 	gOpts.keys["<space>"] = &listExpr{[]expr{&callExpr{"toggle", nil, 1}, &callExpr{"down", nil, 1}}, 1}
+	gOpts.keys["<s-down>"] = &listExpr{[]expr{&callExpr{"toggle", nil, 1}, &callExpr{"down", nil, 1}}, 1}
+	gOpts.keys["<s-up>"] = &listExpr{[]expr{&callExpr{"toggle", nil, 1}, &callExpr{"up", nil, 1}}, 1}
 	gOpts.keys["t"] = &callExpr{"tag-toggle", nil, 1}
 	gOpts.keys["ca"] = &callExpr{"invert", nil, 1}
 	gOpts.keys["cu"] = &callExpr{"unselect", nil, 1}
@@ -190,7 +192,7 @@ func init() {
 	gOpts.keys["cx"] = &callExpr{"cut", nil, 1}
 	gOpts.keys["<esc>"] = &callExpr{"clear", nil, 1}
 	gOpts.keys["cv"] = &callExpr{"paste", nil, 1}
-	gOpts.keys["cl"] = &callExpr{"redraw", nil, 1}
+	gOpts.keys["<c-l>"] = &callExpr{"redraw", nil, 1}
 	gOpts.keys["cr"] = &callExpr{"reload", nil, 1}
 	gOpts.keys[":"] = &callExpr{"read", nil, 1}
 	gOpts.keys["$"] = &callExpr{"shell", nil, 1}
