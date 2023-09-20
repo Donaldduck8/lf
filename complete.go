@@ -218,7 +218,6 @@ var (
 		"infotimefmtnew",
 		"infotimefmtold",
 		"truncatechar",
-		"dangerousExts",
 	}
 )
 

@@ -875,12 +875,6 @@ func (e *setExpr) eval(app *app, args []string) {
 			return
 		}
 		gOpts.wrapscroll = !gOpts.wrapscroll
-	case "dangerousExts":
-		if e.val == "" {
-			gOpts.dangerousExts = []string{}
-			return
-		}
-		gOpts.dangerousExts = strings.Split(e.val, ":")
 	default:
 		// any key with the prefix user_ is accepted as a user defined option
 		if strings.HasPrefix(e.opt, "user_") {
@@ -1398,19 +1392,6 @@ func (e *callExpr) eval(app *app, args []string) {
 		if err != nil {
 			app.ui.echoerrf("opening: %s", err)
 			return
-		}
-
-		extensionsToCheck := gOpts.dangerousExts
-		currExt := filepath.Ext(curr.path)
-		currExt = strings.ToLower(currExt)
-
-		for _, ext := range extensionsToCheck {
-			if !strings.HasPrefix(ext, ".") {
-				ext = "." + ext
-			}
-			if ext == currExt {
-				return
-			}
 		}
 
 		if curr.IsDir() {
@@ -2573,20 +2554,6 @@ func (e *callExpr) eval(app *app, args []string) {
 		app.runPagerOn(listBinds(gOpts.cmdkeys))
 	case "jumps":
 		app.runPagerOn(listJumps(app.nav.jumpList, app.nav.jumpListInd))
-	case "convert":
-		if err := app.ui.suspend(); err != nil {
-			log.Printf("suspend: %s", err)
-		}
-		defer func() {
-			if err := app.ui.resume(); err != nil {
-				app.quit()
-				os.Exit(3)
-			}
-		}()
-		parseAndConvert(strings.Join(e.args, " "))
-		anyKey()
-		app.ui.loadFile(app, true)
-		app.nav.renew()
 	default:
 		cmd, ok := gOpts.cmds[e.name]
 		if !ok {

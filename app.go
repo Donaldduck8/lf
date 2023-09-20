@@ -577,24 +577,10 @@ func (app *app) runShell(s string, args []string, prefix string) {
 		cmd.Stderr = cmd.Stdout
 	}
 
-	/* If you need to analyze output of command, uncomment this
-	var outbuf, errbuf strings.Builder // or bytes.Buffer
-	cmd.Stdout = &outbuf
-	cmd.Stderr = &errbuf
-	*/
-
 	shellSetPG(cmd)
 	if err = cmd.Start(); err != nil {
 		app.ui.echoerrf("running shell: %s", err)
 	}
-
-	/* If you need to analyze output of command, uncomment this
-	stdout := outbuf.String()
-	stderr := errbuf.String()
-
-	log.Printf("stdout of command: %s", stdout)
-	log.Printf("stderr of command: %s", stderr)
-	*/
 
 	switch prefix {
 	case "%":

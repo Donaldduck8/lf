@@ -1134,10 +1134,6 @@ func (ui *ui) pollEvent() tcell.Event {
 			ch = '<'
 		case val == "<gt>":
 			ch = '>'
-		case val == "<space>":
-			ch = ' '
-		case val == "<quote>":
-			ch = '"'
 		case reModKey.MatchString(val):
 			matches := reModKey.FindStringSubmatch(val)
 			switch matches[1] {
