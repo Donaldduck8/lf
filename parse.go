@@ -234,6 +234,9 @@ func (p *parser) parseExpr() expr {
 					exprRaw += string(s.chr)
 					s.next()
 				}
+				for s.chr == '\n' || s.chr == '\r' {
+					s.next()
+				}
 				args = append(args, exprRaw)
 			} else {
 				for s.scan() && s.typ != tokenSemicolon {
