@@ -29,14 +29,15 @@ var (
 )
 
 var (
-	gUser        *user.User
-	gConfigPaths []string
-	gColorsPaths []string
-	gIconsPaths  []string
-	gFilesPath   string
-	gTagsPath    string
-	gMarksPath   string
-	gHistoryPath string
+	gUser         *user.User
+	gConfigPaths  []string
+	gColorsPaths  []string
+	gIconsPaths   []string
+	gFilesPath    string
+	gTagsPath     string
+	gMarksPath    string
+	gHistoryPath  string
+	gPyScriptPath string
 )
 
 func init() {
@@ -92,6 +93,9 @@ func init() {
 	gMarksPath = filepath.Join(data, "lf", "marks")
 	gTagsPath = filepath.Join(data, "lf", "tags")
 	gHistoryPath = filepath.Join(data, "lf", "history")
+
+	gPyScriptPath = filepath.Join(data, "lf", "script.py")
+	os.Setenv("script_py", gPyScriptPath)
 }
 
 func detachedCommand(name string, arg ...string) *exec.Cmd {
