@@ -79,7 +79,7 @@ type callExpr struct {
 
 func (e *callExpr) String() string {
 	if len(e.args) == 0 {
-		return fmt.Sprintf("%s", e.name)
+		return e.name
 	}
 	return fmt.Sprintf("%s -- %s", e.name, e.args)
 }
