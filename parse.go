@@ -226,9 +226,19 @@ func (p *parser) parseExpr() expr {
 		default:
 			name := s.tok
 
+			var exprRaw string
 			var args []string
-			for s.scan() && s.typ != tokenSemicolon {
-				args = append(args, s.tok)
+
+			if name == "push" {
+				for s.chr != '\n' && s.chr != '\r' {
+					exprRaw += string(s.chr)
+					s.next()
+				}
+				args = append(args, exprRaw)
+			} else {
+				for s.scan() && s.typ != tokenSemicolon {
+					args = append(args, s.tok)
+				}
 			}
 
 			s.scan()

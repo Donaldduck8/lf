@@ -2136,13 +2136,14 @@ func (e *callExpr) eval(app *app, args []string) {
 		app.readFile(replaceTilde(e.args[0]))
 		app.ui.loadFileInfo(app.nav)
 	case "push":
-		if len(e.args) != 1 {
+		if len(e.args) == 0 {
 			app.ui.echoerr("push: requires an argument")
 			return
 		}
-		log.Println("pushing keys", e.args[0])
-		for _, val := range splitKeys(e.args[0]) {
-			app.ui.keyChan <- val
+		for _, word := range e.args {
+			for _, val := range splitKeys(word) {
+				app.ui.keyChan <- val
+			}
 		}
 	case "cmd-insert":
 		if len(e.args) == 0 {
