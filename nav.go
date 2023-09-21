@@ -857,6 +857,11 @@ func (nav *nav) preview(path string, win *win) {
 		reg.lines = append(reg.lines, buf.Text())
 	}
 
+	if len(reg.lines[0]) == 0 {
+		reg.lines = []string{"\033[7mempty\033[0m"}
+		return
+	}
+
 	if buf.Err() != nil {
 		log.Printf("loading file: %s", buf.Err())
 	}
