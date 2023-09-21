@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -2555,6 +2556,16 @@ func (e *callExpr) eval(app *app, args []string) {
 		app.runPagerOn(listBinds(gOpts.cmdkeys))
 	case "jumps":
 		app.runPagerOn(listJumps(app.nav.jumpList, app.nav.jumpListInd))
+	case "send-nvim":
+		var filePath string
+		for _, arg := range e.args {
+			filePath += arg
+		}
+		remoteCommand := "send-others " + fmt.Sprint(gClientID) + " !nvim " + filePath
+		if err := remote(remoteCommand); err != nil {
+			app.ui.echoerrf("remote command failed: %s", remoteCommand)
+			return
+		}
 	default:
 		cmd, ok := gOpts.cmds[e.name]
 		if !ok {
