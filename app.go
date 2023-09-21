@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"os/signal"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"syscall"
 	"time"
@@ -535,14 +536,10 @@ func (app *app) runShell(s string, args []string, prefix string) {
 	exportOpts()
 
 	// Break up s into arguments
-	if len(args) == 0 {
+	// If this is not done, syscall.makeCmdLine will double-escape any quotes in the shell command
+	if len(args) == 0 && runtime.GOOS == "windows" {
 		args = parseArgs(s)
 		s = ""
-	}
-
-	log.Printf("Number of arguments: %d", len(args))
-	for i := 0; i < len(args); i++ {
-		log.Printf("Argument: %s", args[i])
 	}
 
 	cmd := shellCommand(s, args)
