@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -469,6 +470,30 @@ func (e *setExpr) eval(app *app, args []string) {
 			return
 		}
 		gOpts.incsearch = !gOpts.incsearch
+	case "toggleinfo":
+		if e.val == "" {
+			app.ui.echoerrf("toggleinfo!: requires value")
+			return
+		}
+		switch e.val {
+		case "size", "time", "atime", "ctime", "sha256":
+			contained := false
+			for i, v := range gOpts.info {
+				if v == e.val {
+					contained = true
+					gOpts.info = append(gOpts.info[:i], gOpts.info[i+1:]...)
+					break
+				}
+			}
+			if !contained {
+				if e.val == "sha256" {
+					gHashes = make(map[string]string)
+				}
+				gOpts.info = append(gOpts.info, e.val)
+			}
+		default:
+			return
+		}
 	case "info":
 		if e.val == "" {
 			gOpts.info = nil
@@ -477,9 +502,11 @@ func (e *setExpr) eval(app *app, args []string) {
 		toks := strings.Split(e.val, ":")
 		for _, s := range toks {
 			switch s {
+			case "sha256":
+				gHashes = make(map[string]string)
 			case "size", "time", "atime", "ctime":
 			default:
-				app.ui.echoerr("info: should consist of 'size', 'time', 'atime' or 'ctime' separated with colon")
+				app.ui.echoerr("info: should consist of 'size', 'time', 'atime', 'ctime' or 'sha256' separated with colon")
 				return
 			}
 		}
@@ -875,12 +902,6 @@ func (e *setExpr) eval(app *app, args []string) {
 			return
 		}
 		gOpts.wrapscroll = !gOpts.wrapscroll
-	case "dangerousExts":
-		if e.val == "" {
-			gOpts.dangerousExts = []string{}
-			return
-		}
-		gOpts.dangerousExts = strings.Split(e.val, ":")
 	default:
 		// any key with the prefix user_ is accepted as a user defined option
 		if strings.HasPrefix(e.opt, "user_") {
@@ -1398,19 +1419,6 @@ func (e *callExpr) eval(app *app, args []string) {
 		if err != nil {
 			app.ui.echoerrf("opening: %s", err)
 			return
-		}
-
-		extensionsToCheck := gOpts.dangerousExts
-		currExt := filepath.Ext(curr.path)
-		currExt = strings.ToLower(currExt)
-
-		for _, ext := range extensionsToCheck {
-			if !strings.HasPrefix(ext, ".") {
-				ext = "." + ext
-			}
-			if ext == currExt {
-				return
-			}
 		}
 
 		if curr.IsDir() {
@@ -2155,13 +2163,14 @@ func (e *callExpr) eval(app *app, args []string) {
 		app.readFile(replaceTilde(e.args[0]))
 		app.ui.loadFileInfo(app.nav)
 	case "push":
-		if len(e.args) != 1 {
+		if len(e.args) == 0 {
 			app.ui.echoerr("push: requires an argument")
 			return
 		}
-		log.Println("pushing keys", e.args[0])
-		for _, val := range splitKeys(e.args[0]) {
-			app.ui.keyChan <- val
+		for _, word := range e.args {
+			for _, val := range splitKeys(word) {
+				app.ui.keyChan <- val
+			}
 		}
 	case "cmd-insert":
 		if len(e.args) == 0 {
@@ -2573,20 +2582,16 @@ func (e *callExpr) eval(app *app, args []string) {
 		app.runPagerOn(listBinds(gOpts.cmdkeys))
 	case "jumps":
 		app.runPagerOn(listJumps(app.nav.jumpList, app.nav.jumpListInd))
-	case "convert":
-		if err := app.ui.suspend(); err != nil {
-			log.Printf("suspend: %s", err)
+	case "send-nvim":
+		var filePath string
+		for _, arg := range e.args {
+			filePath += arg
 		}
-		defer func() {
-			if err := app.ui.resume(); err != nil {
-				app.quit()
-				os.Exit(3)
-			}
-		}()
-		parseAndConvert(strings.Join(e.args, " "))
-		anyKey()
-		app.ui.loadFile(app, true)
-		app.nav.renew()
+		remoteCommand := "send-others " + fmt.Sprint(gClientID) + " !nvim " + filePath
+		if err := remote(remoteCommand); err != nil {
+			app.ui.echoerrf("remote command failed: %s", remoteCommand)
+			return
+		}
 	default:
 		cmd, ok := gOpts.cmds[e.name]
 		if !ok {

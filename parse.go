@@ -79,7 +79,7 @@ type callExpr struct {
 
 func (e *callExpr) String() string {
 	if len(e.args) == 0 {
-		return fmt.Sprintf("%s", e.name)
+		return e.name
 	}
 	return fmt.Sprintf("%s -- %s", e.name, e.args)
 }
@@ -226,9 +226,22 @@ func (p *parser) parseExpr() expr {
 		default:
 			name := s.tok
 
+			var exprRaw string
 			var args []string
-			for s.scan() && s.typ != tokenSemicolon {
-				args = append(args, s.tok)
+
+			if name == "push" {
+				for s.chr != '\n' && s.chr != '\r' {
+					exprRaw += string(s.chr)
+					s.next()
+				}
+				for s.chr == '\n' || s.chr == '\r' {
+					s.next()
+				}
+				args = append(args, exprRaw)
+			} else {
+				for s.scan() && s.typ != tokenSemicolon {
+					args = append(args, s.tok)
+				}
 			}
 
 			s.scan()

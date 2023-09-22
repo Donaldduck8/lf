@@ -100,6 +100,22 @@ Loop:
 			} else {
 				echoerr(c, "listen: drop: requires a client id")
 			}
+		case "send-others":
+			if rest != "" {
+				word2, rest2 := splitWord(rest)
+				senderId, err := strconv.Atoi(word2)
+				if err != nil {
+					echoerr(c, "listen: send-others: client id should be a number")
+				} else {
+					for id, c2 := range gConnList {
+						if id != senderId {
+							fmt.Fprintln(c2, rest2)
+						}
+					}
+				}
+			} else {
+				echoerr(c, "listen: send-others: requires a client id")
+			}
 		case "send":
 			if rest != "" {
 				word2, rest2 := splitWord(rest)

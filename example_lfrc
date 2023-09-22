@@ -1,9 +1,5 @@
 set filesep " "
 
-# Quick rename bound to 'r'
-cmd rename %sh -c 'mv -i %f% $0'
-map r push :rename<space>
-
 # Quick reload LFRC with f5
 map <f-5> push :source<space>\%localappdata\%/lf/lfrc<enter>
 
@@ -13,16 +9,29 @@ map <f-5> push :source<space>\%localappdata\%/lf/lfrc<enter>
 # map a push :createfile<space>
 # map A push :createdir<space>
 
+# Archives
+cmd 7z 7z<space>x<space>%fx%<enter>
+
+#cmd zip push &7z<space>a<space>$0<space>%fx%<enter>
+#cmd extract_to %sh<space>-c '7z e %f% -o$0'
+
 # Open explorer in current directory
 map <c-o> push &start.<enter>
 
+# Main reversing functionality
 cmd ida32 push &<quote>C:/Program<space>Files/IDA<space>Pro<space>8.3/ida.exe<quote><space>%fx%<enter>
 cmd ida64 push &<quote>C:/Program<space>Files/IDA<space>Pro<space>8.3/ida64.exe<quote><space>%fx%<enter>
 cmd vscode push &code<space>%fx%<enter>
+cmd notepad++ push &notepad++<space>%fx%<enter>
+cmd hxd push &<quote>C:/Program<space>Files/HxD/HxD.exe<quote><space>%fx%<enter>
+cmd 7z push !7z<space>x<space>%fx%<enter>
 
-map xi :ida64
-map xu :ida32
-map xv :vscode
+map xi3 ida32
+map xi6 ida64
+map xen notepad++
+map xev vscode
+map xhd hxd
+map x7z 7z
 
 # Copy file path
 # Todo: make this not have "" around the path
@@ -31,20 +40,13 @@ map Y %echo %fx% | clip
 cmd peek !emit %fx% | peek
 cmd pemeta !emit %fx% | pemeta
 
-# Archives - DOES NOT WORK ATM
-# cmd zip %sh -c '7z a $0 %fx%'
-# cmd extract_here %sh -c '7z e %f%'
-# cmd extract_to %sh -c '7z e %f% -o$0'
-
 # Prevent right arrow from opening files
 map <right> open-dir
-map <c-v> paste
-map <gt> paste
 
-:set number
 :set mouse
 :set icons
 :set relativenumber
 :set ignorecase
 :set info size:time
 :set drawbox
+:set wrapscroll
