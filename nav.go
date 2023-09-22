@@ -633,6 +633,10 @@ func (nav *nav) reload() error {
 		last.files = append(last.files, curr)
 	}
 
+	for k := range gHashes {
+		delete(gHashes, k)
+	}
+
 	return nil
 }
 

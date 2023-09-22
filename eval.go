@@ -470,6 +470,30 @@ func (e *setExpr) eval(app *app, args []string) {
 			return
 		}
 		gOpts.incsearch = !gOpts.incsearch
+	case "toggleinfo":
+		if e.val == "" {
+			app.ui.echoerrf("toggleinfo!: requires value")
+			return
+		}
+		switch e.val {
+		case "size", "time", "atime", "ctime", "sha256":
+			contained := false
+			for i, v := range gOpts.info {
+				if v == e.val {
+					contained = true
+					gOpts.info = append(gOpts.info[:i], gOpts.info[i+1:]...)
+					break
+				}
+			}
+			if !contained {
+				if e.val == "sha256" {
+					gHashes = make(map[string]string)
+				}
+				gOpts.info = append(gOpts.info, e.val)
+			}
+		default:
+			return
+		}
 	case "info":
 		if e.val == "" {
 			gOpts.info = nil
@@ -478,9 +502,11 @@ func (e *setExpr) eval(app *app, args []string) {
 		toks := strings.Split(e.val, ":")
 		for _, s := range toks {
 			switch s {
+			case "sha256":
+				gHashes = make(map[string]string)
 			case "size", "time", "atime", "ctime":
 			default:
-				app.ui.echoerr("info: should consist of 'size', 'time', 'atime' or 'ctime' separated with colon")
+				app.ui.echoerr("info: should consist of 'size', 'time', 'atime', 'ctime' or 'sha256' separated with colon")
 				return
 			}
 		}

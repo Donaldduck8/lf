@@ -2,6 +2,8 @@ package main
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"log"
 	"os"
@@ -144,6 +146,8 @@ var gKeyVal = map[tcell.Key]string{
 
 var gValKey map[string]tcell.Key
 
+var gHashes map[string]string
+
 func init() {
 	gValKey = make(map[string]tcell.Key)
 	for k, v := range gKeyVal {
@@ -285,6 +289,45 @@ func infotimefmt(t time.Time) string {
 	return t.Format(gOpts.infotimefmtold)
 }
 
+func getSha256(f *file) string {
+	// Check if hash is cached
+	if val, ok := gHashes[f.path]; ok {
+		return val
+	}
+
+	if f.Size() == 0 || f.IsDir() {
+		return "------"
+	}
+
+	hasher := sha256.New()
+	// Open the file
+	file, err := os.Open(f.path)
+	if err != nil {
+		fmt.Println("Error opening file:", err)
+		return "------"
+	}
+	defer file.Close()
+
+	// Create a buffer to read chunks of 1024 bytes
+	buffer := make([]byte, 1024*1024*16)
+
+	// Read the file in chunks
+	for {
+		n, err := file.Read(buffer)
+		if n > 0 {
+			// Process the chunk of data here (e.g., print it)
+			hasher.Write(buffer)
+		}
+		if err != nil {
+			break
+		}
+	}
+	hash := hex.EncodeToString(hasher.Sum(nil))
+
+	gHashes[f.path] = hash
+	return hash
+}
+
 func fileInfo(f *file, d *dir) string {
 	var info string
 
@@ -318,6 +361,11 @@ func fileInfo(f *file, d *dir) string {
 			info = fmt.Sprintf("%s %*s", info, max(len(gOpts.infotimefmtnew), len(gOpts.infotimefmtold)), infotimefmt(f.accessTime))
 		case "ctime":
 			info = fmt.Sprintf("%s %*s", info, max(len(gOpts.infotimefmtnew), len(gOpts.infotimefmtold)), infotimefmt(f.changeTime))
+		case "sha256":
+			if gHashes == nil {
+				gHashes = make(map[string]string)
+			}
+			info = fmt.Sprintf("%s %s", info, getSha256(f)[:6])
 		default:
 			log.Printf("unknown info type: %s", s)
 		}

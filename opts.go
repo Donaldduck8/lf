@@ -216,6 +216,7 @@ func init() {
 	gOpts.keys["zs"] = &setExpr{"info", "size"}
 	gOpts.keys["zt"] = &setExpr{"info", "time"}
 	gOpts.keys["za"] = &setExpr{"info", "size:time"}
+	gOpts.keys["zzh"] = &setExpr{"toggleinfo", "sha256"}
 	gOpts.keys["sn"] = &listExpr{[]expr{&setExpr{"sortby", "natural"}, &setExpr{"info", ""}}, 1}
 	gOpts.keys["ss"] = &listExpr{[]expr{&setExpr{"sortby", "size"}, &setExpr{"info", "size"}}, 1}
 	gOpts.keys["st"] = &listExpr{[]expr{&setExpr{"sortby", "time"}, &setExpr{"info", "time"}}, 1}
