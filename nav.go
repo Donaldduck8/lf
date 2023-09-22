@@ -806,11 +806,26 @@ func (nav *nav) preview(path string, win *win) {
 	if len(gOpts.previewer) != 0 {
 		nav.exportFiles()
 		exportOpts()
-		cmd := exec.Command(gOpts.previewer, path,
-			strconv.Itoa(win.w),
-			strconv.Itoa(win.h),
-			strconv.Itoa(win.x),
-			strconv.Itoa(win.y))
+
+		wantShellCmd := strings.Contains(gOpts.previewer, " ")
+
+		var cmd *exec.Cmd
+
+		if wantShellCmd {
+			args := parseArgs(gOpts.previewer)
+			args = append(args, path, strconv.Itoa(win.w),
+				strconv.Itoa(win.h),
+				strconv.Itoa(win.x),
+				strconv.Itoa(win.y))
+			name := args[0]
+			cmd = shellCommand(name, args[1:])
+		} else {
+			cmd = exec.Command(gOpts.previewer, path,
+				strconv.Itoa(win.w),
+				strconv.Itoa(win.h),
+				strconv.Itoa(win.x),
+				strconv.Itoa(win.y))
+		}
 
 		out, err := cmd.StdoutPipe()
 		if err != nil {
@@ -824,18 +839,21 @@ func (nav *nav) preview(path string, win *win) {
 			return
 		}
 
-		defer func() {
-			if err := cmd.Wait(); err != nil {
-				if e, ok := err.(*exec.ExitError); ok {
-					if e.ExitCode() != 0 {
-						reg.volatile = true
-						nav.volatilePreview = true
+		if !wantShellCmd {
+			defer func() {
+				if err := cmd.Wait(); err != nil {
+					if e, ok := err.(*exec.ExitError); ok {
+						if e.ExitCode() != 0 {
+							reg.volatile = true
+							nav.volatilePreview = true
+						}
+					} else {
+						log.Printf("loading file: %s", err)
 					}
-				} else {
-					log.Printf("loading file: %s", err)
 				}
-			}
-		}()
+			}()
+		}
+
 		defer out.Close()
 		reader = out
 	} else {
