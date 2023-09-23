@@ -305,7 +305,7 @@ func getSha256(f *file) string {
 	// Open the file
 	file, err := os.Open(f.path)
 	if err != nil {
-		fmt.Println("Error opening file:", err)
+		// fmt.Println("Error opening file:", err)
 		return "------"
 	}
 	defer file.Close()
@@ -367,7 +367,8 @@ func fileInfo(f *file, d *dir) string {
 			if gHashes == nil {
 				gHashes = make(map[string]string)
 			}
-			info = fmt.Sprintf("%s %s", info, getSha256(f)[:6])
+			hash_preview := getSha256(f)[:6]
+			info = fmt.Sprintf("%s %s", info, hash_preview)
 		default:
 			log.Printf("unknown info type: %s", s)
 		}
