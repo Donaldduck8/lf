@@ -5,16 +5,19 @@
 | [#lf](https://web.libera.chat/#lf) (on Libera.Chat)
 | [#lf:matrix.org](https://matrix.to/#/#lf:matrix.org) (with IRC bridge)
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/gokcehan/lf)](https://goreportcard.com/report/github.com/gokcehan/lf)
-[![Go Reference](https://pkg.go.dev/badge/github.com/gokcehan/lf.svg)](https://pkg.go.dev/github.com/gokcehan/lf)
+### ℹ️ This is a fork of `lf`, focused on:
+- Integration of Python scripting
+- Improved support for complex shell commands
+- Tweaks and features specific to malware analysis
 
-> This is a work in progress. Use at your own risk.
+##
 
 `lf` (as in "list files") is a terminal file manager written in Go with a heavy inspiration from ranger file manager.
 See [faq](https://github.com/gokcehan/lf/wiki/FAQ) for more information and [tutorial](https://github.com/gokcehan/lf/wiki/Tutorial) for a gentle introduction with screencasts.
 
-![multicol-screenshot](http://i.imgur.com/DaTUenu.png)
-![singlecol-screenshot](http://i.imgur.com/p95xzUj.png)
+![multicol-screenshot](https://cdn.discordapp.com/attachments/494031100096544769/1155220607215095838/lf2-fix_copy_rounded-min.png)
+
+![singlecol-screenshot](https://cdn.discordapp.com/attachments/494031100096544769/1155220607487721532/lf3-min_copy_rounded-min.png)
 
 ## Features
 
