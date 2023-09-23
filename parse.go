@@ -230,21 +230,27 @@ func (p *parser) parseExpr() expr {
 			var args []string
 
 			if name == "push" {
-				for s.chr != '\n' && s.chr != '\r' {
+				for s.chr != '\n' {
 					exprRaw += string(s.chr)
 					s.next()
 				}
-				for s.chr == '\n' || s.chr == '\r' {
-					s.next()
-				}
+				s.key = false
+				s.typ = tokenCommand
+				s.tok = exprRaw
+
+				s.scan()
+				s.scan()
+
+				exprRaw = exprRaw[:len(exprRaw)-1]
 				args = append(args, exprRaw)
+
 			} else {
 				for s.scan() && s.typ != tokenSemicolon {
 					args = append(args, s.tok)
 				}
-			}
 
-			s.scan()
+				s.scan()
+			}
 
 			result = &callExpr{name, args, 1}
 		}
