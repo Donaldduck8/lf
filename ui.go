@@ -316,7 +316,7 @@ func getSha256(f *file) string {
 		n, err := file.Read(buffer)
 		if n > 0 {
 			// Process the chunk of data here (e.g., print it)
-			hasher.Write(buffer)
+			hasher.Write(buffer[:n])
 		}
 		if err != nil {
 			break
