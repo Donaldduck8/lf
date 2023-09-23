@@ -1,49 +1,77 @@
 set filesep " "
+set cursorpreviewfmt "\033[7m"
+set previewer "py %script_py% preview"
 
-# Quick reload LFRC with f5
-map <f-5> push :source<space>\%localappdata\%/lf/lfrc<enter>
-
-# Use a and A to create files and directories
-# cmd createfile %sh -c 'touch $0'
-# cmd createdir %sh -c 'mkdir $0'
-# map a push :createfile<space>
-# map A push :createdir<space>
-
-# Archives
-cmd 7z 7z<space>x<space>%fx%<enter>
-
-#cmd zip push &7z<space>a<space>$0<space>%fx%<enter>
-#cmd extract_to %sh<space>-c '7z e %f% -o$0'
+# Refresh the screen
+map r $cls
 
 # Open explorer in current directory
 map <c-o> push &start.<enter>
 
-# Main reversing functionality
-cmd ida32 push &<quote>C:/Program<space>Files/IDA<space>Pro<space>8.3/ida.exe<quote><space>%fx%<enter>
-cmd ida64 push &<quote>C:/Program<space>Files/IDA<space>Pro<space>8.3/ida64.exe<quote><space>%fx%<enter>
-cmd vscode push &code<space>%fx%<enter>
-cmd notepad++ push &notepad++<space>%fx%<enter>
-cmd hxd push &<quote>C:/Program<space>Files/HxD/HxD.exe<quote><space>%fx%<enter>
-cmd 7z push !7z<space>x<space>%fx%<enter>
+# Create new files and folders
+cmd create_file push %"py %script_py% create-file %PWD%"<enter>
+cmd create_dir push %"py %script_py% create-dir %PWD%"<enter>
 
+map cn create_file
+map cd create_dir
+
+# Views
+cmd peek !emit %fx% | peek
+cmd pemeta !emit %fx% | pemeta
+cmd hash !ef "**" [| sha256 -t | cfmt {} {path} ]]
+cmd hash_copy $ef %fx% -s=64000000 | sha256 -t | clip
+cmd strings $strings -n 5 -o %fx% > %fx%.txt
+cmd floss !floss %fx% -j > %fx%.json
+
+map x1 peek
+map x2 pemeta
+map xhs hash
+map xhc hash_copy
+map xsh strings
+map xfl floss
+
+# Main reversing functionality
+cmd 7z push %7z x %fx%<enter>
+cmd dnspy push &"C:\Tools\dnSpy\dnSpy.exe" %fx%<enter>
+cmd hxd push &"C:\Program Files\HxD\HxD.exe" %fx%<enter>
+cmd ilspy push &"C:\Tools\ilspy\ILSpy.exe" %fx%<enter>
+cmd ida32 push &"C:\Tools\ida76sp1\ida.exe" %fx%<enter>
+cmd ida64 push &"C:\Tools\ida76sp1\ida64.exe" %fx%<enter>
+cmd notepad++ push &"C:\Program Files\Notepad++\notepad++.exe" %fx%<enter>
+cmd vscode push &"C:\Users\xavier\AppData\Local\Programs\Microsoft VS Code\Code.exe" %fx%<enter>
+
+map x7z 7z
 map xi3 ida32
 map xi6 ida64
-map xen notepad++
-map xev vscode
+map xdn dnspy
 map xhd hxd
-map x7z 7z
+map xil ilspy
+map xen notepad++
+map xvc vscode
+
+# Open nvim
+cmd nvim push $nvim %fx%<enter>
+map xnv nvim
+
+# Open nvim in other panes
+cmd send_nvim push &py %script_py% send-nvim %fx% %id%<enter>
+cmd alt_down push &py %script_py% alt-down %fx% %id%<enter>
+
+map xxnv :{{
+	send_nvim
+	alt_down
+}}
 
 # Copy file path
 # Todo: make this not have "" around the path
 map Y %echo %fx% | clip
 
-cmd peek !emit %fx% | peek
-cmd pemeta !emit %fx% | pemeta
-
 # Prevent right arrow from opening files
 map <right> open-dir
 
-:set mouse
+# Tagging with *
+map * tag-toggle
+
 :set icons
 :set relativenumber
 :set ignorecase
