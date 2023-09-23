@@ -870,12 +870,15 @@ func (nav *nav) preview(path string, win *win) {
 	buf := bufio.NewScanner(reader)
 
 	for i := 0; i < win.h && buf.Scan(); i++ {
-		for _, r := range buf.Text() {
-			if r == 0 {
-				reg.lines = []string{"\033[7mbinary\033[0m"}
-				return
+		if len(gOpts.previewer) != 0 {
+			for _, r := range buf.Text() {
+				if r == 0 {
+					reg.lines = []string{"\033[7mbinary\033[0m"}
+					return
+				}
 			}
 		}
+
 		reg.lines = append(reg.lines, buf.Text())
 	}
 
