@@ -8,10 +8,22 @@ import (
 	"net"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gdamore/tcell/v2"
 )
+
+type State struct {
+	mutex sync.Mutex
+	data  map[string]string
+}
+
+var gState State
+
+func init() {
+	gState.data = make(map[string]string)
+}
 
 func run() {
 	var screen tcell.Screen
@@ -61,6 +73,52 @@ func run() {
 	app.loop()
 
 	app.ui.screen.Fini()
+
+	if gLastDirPath != "" {
+		writeLastDir(gLastDirPath, app.nav.currDir().path)
+	}
+
+	if gSelectionPath != "" && len(app.selectionOut) > 0 {
+		writeSelection(gSelectionPath, app.selectionOut)
+	}
+
+	if gPrintLastDir {
+		fmt.Println(app.nav.currDir().path)
+	}
+
+	if gPrintSelection && len(app.selectionOut) > 0 {
+		for _, file := range app.selectionOut {
+			fmt.Println(file)
+		}
+	}
+}
+
+func writeLastDir(filename string, lastDir string) {
+	f, err := os.Create(filename)
+	if err != nil {
+		log.Printf("opening last dir file: %s", err)
+		return
+	}
+	defer f.Close()
+
+	_, err = f.WriteString(lastDir)
+	if err != nil {
+		log.Printf("writing last dir file: %s", err)
+	}
+}
+
+func writeSelection(filename string, selection []string) {
+	f, err := os.Create(filename)
+	if err != nil {
+		log.Printf("opening selection file: %s", err)
+		return
+	}
+	defer f.Close()
+
+	_, err = f.WriteString(strings.Join(selection, "\n"))
+	if err != nil {
+		log.Printf("writing selection file: %s", err)
+	}
 }
 
 func readExpr() <-chan expr {
@@ -84,9 +142,24 @@ func readExpr() <-chan expr {
 		s := bufio.NewScanner(c)
 		for s.Scan() {
 			log.Printf("recv: %s", s.Text())
-			p := newParser(strings.NewReader(s.Text()))
-			if p.parse() {
-				ch <- p.expr
+
+			// `query` has to be handled outside of the main thread, which is
+			// blocked when running a synchronous shell command ("$" or "!").
+			// This is important since `query` is often the result of the user
+			// running `$lf -remote "query $id <something>"`.
+			if word, rest := splitWord(s.Text()); word == "query" {
+				gState.mutex.Lock()
+				state, ok := gState.data[rest]
+				gState.mutex.Unlock()
+				if ok {
+					fmt.Fprint(c, state)
+				}
+				fmt.Fprintln(c, "")
+			} else {
+				p := newParser(strings.NewReader(s.Text()))
+				if p.parse() {
+					ch <- p.expr
+				}
 			}
 		}
 

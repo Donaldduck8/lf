@@ -11,12 +11,10 @@ import (
 var (
 	gCmdWords = []string{
 		"set",
+		"setlocal",
 		"map",
-		"maps",
 		"cmap",
-		"cmaps",
 		"cmd",
-		"cmds",
 		"quit",
 		"up",
 		"half-up",
@@ -30,7 +28,6 @@ var (
 		"open",
 		"jump-next",
 		"jump-prev",
-		"jumps",
 		"top",
 		"bottom",
 		"high",
@@ -106,6 +103,7 @@ var (
 		"cmd-word",
 		"cmd-word-back",
 		"cmd-delete-word",
+		"cmd-delete-word-back",
 		"cmd-capitalize-word",
 		"cmd-uppercase-word",
 		"cmd-lowercase-word",
@@ -140,6 +138,7 @@ var (
 		"drawbox",
 		"nodrawbox",
 		"drawbox!",
+		"dupfilefmt",
 		"globsearch",
 		"noglobsearch",
 		"globsearch!",
@@ -177,7 +176,11 @@ var (
 		"noreverse",
 		"reverse!",
 		"ruler",
+		"rulerfmt",
 		"preserve",
+		"sixel",
+		"nosixel",
+		"sixel!",
 		"smartcase",
 		"nosmartcase",
 		"smartcase!",
@@ -218,6 +221,24 @@ var (
 		"infotimefmtnew",
 		"infotimefmtold",
 		"truncatechar",
+		"truncatepct",
+	}
+
+	gLocalOptWords = []string{
+		"dirfirst",
+		"nodirfirst",
+		"dirfirst!",
+		"dironly",
+		"nodironly",
+		"dironly!",
+		"hidden",
+		"nohidden",
+		"hidden!",
+		"info",
+		"reverse",
+		"noreverse",
+		"reverse!",
+		"sortby",
 	}
 )
 
@@ -282,7 +303,6 @@ func matchExec(s string) (matches []string, longest []rune) {
 				continue
 			}
 
-			log.Print(finfo.Name())
 			words = append(words, finfo.Name())
 		}
 	}
@@ -406,6 +426,9 @@ func completeCmd(acc []rune) (matches []string, longestAcc []rune) {
 		}
 	case 3:
 		switch f[0] {
+		case "setlocal":
+			matches, longest = matchWord(f[2], gLocalOptWords)
+			longestAcc = append(acc[:len(acc)-len([]rune(f[len(f)-1]))], longest...)
 		case "map", "cmap":
 			matches, longest = matchCmd(f[2])
 			longestAcc = append(acc[:len(acc)-len([]rune(f[len(f)-1]))], longest...)
@@ -415,7 +438,7 @@ func completeCmd(acc []rune) (matches []string, longestAcc []rune) {
 		}
 	default:
 		switch f[0] {
-		case "set", "map", "cmap", "cmd":
+		case "set", "setlocal", "map", "cmap", "cmd":
 			longestAcc = acc
 		default:
 			matches, longest = matchFile(f[len(f)-1])

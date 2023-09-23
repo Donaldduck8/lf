@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -36,6 +37,7 @@ type file struct {
 	accessTime time.Time
 	changeTime time.Time
 	ext        string
+	err        error
 }
 
 func (file *file) TotalSize() int64 {
@@ -47,6 +49,17 @@ func (file *file) TotalSize() int64 {
 	}
 	return file.Size()
 }
+
+type fakeStat struct {
+	name string
+}
+
+func (fs *fakeStat) Name() string       { return fs.name }
+func (fs *fakeStat) Size() int64        { return 0 }
+func (fs *fakeStat) Mode() os.FileMode  { return os.FileMode(0000) }
+func (fs *fakeStat) ModTime() time.Time { return time.Unix(0, 0) }
+func (fs *fakeStat) IsDir() bool        { return false }
+func (fs *fakeStat) Sys() any           { return nil }
 
 func readdir(path string) ([]*file, error) {
 	f, err := os.Open(path)
@@ -67,6 +80,18 @@ func readdir(path string) ([]*file, error) {
 		}
 		if err != nil {
 			log.Printf("getting file information: %s", err)
+			files = append(files, &file{
+				FileInfo:   &fakeStat{name: fname},
+				linkState:  notLink,
+				linkTarget: "",
+				path:       fpath,
+				dirCount:   -1,
+				dirSize:    -1,
+				accessTime: time.Unix(0, 0),
+				changeTime: time.Unix(0, 0),
+				ext:        filepath.Ext(fpath),
+				err:        err,
+			})
 			continue
 		}
 
@@ -129,6 +154,7 @@ func readdir(path string) ([]*file, error) {
 			accessTime: at,
 			changeTime: ct,
 			ext:        ext,
+			err:        nil,
 		})
 	}
 
@@ -184,8 +210,8 @@ func normalize(s1, s2 string, ignorecase, ignoredia bool) (string, string) {
 }
 
 func (dir *dir) sort() {
-	dir.sortType = gOpts.sortType
-	dir.dironly = gOpts.dironly
+	dir.sortType = getSortType(dir.path)
+	dir.dironly = getDirOnly(dir.path)
 	dir.hiddenfiles = gOpts.hiddenfiles
 	dir.ignorecase = gOpts.ignorecase
 	dir.ignoredia = gOpts.ignoredia
@@ -446,7 +472,7 @@ func (nav *nav) loadDirInternal(path string) *dir {
 		loading:     true,
 		loadTime:    time.Now(),
 		path:        path,
-		sortType:    gOpts.sortType,
+		sortType:    getSortType(path),
 		hiddenfiles: gOpts.hiddenfiles,
 		ignorecase:  gOpts.ignorecase,
 		ignoredia:   gOpts.ignoredia,
@@ -509,8 +535,8 @@ func (nav *nav) checkDir(dir *dir) {
 			}
 			nav.dirChan <- nd
 		}()
-	case dir.sortType != gOpts.sortType ||
-		dir.dironly != gOpts.dironly ||
+	case dir.sortType != getSortType(dir.path) ||
+		dir.dironly != getDirOnly(dir.path) ||
 		!reflect.DeepEqual(dir.hiddenfiles, gOpts.hiddenfiles) ||
 		dir.ignorecase != gOpts.ignorecase ||
 		dir.ignoredia != gOpts.ignoredia:
@@ -621,13 +647,8 @@ func (nav *nav) reload() error {
 	nav.dirCache = make(map[string]*dir)
 	nav.regCache = make(map[string]*reg)
 
-	wd, err := os.Getwd()
-	if err != nil {
-		return fmt.Errorf("getting current directory: %s", err)
-	}
-
 	curr, err := nav.currFile()
-	nav.getDirs(wd)
+	nav.getDirs(nav.currDir().path)
 	if err == nil {
 		last := nav.dirs[len(nav.dirs)-1]
 		last.files = append(last.files, curr)
@@ -659,12 +680,24 @@ func (nav *nav) exportFiles() {
 
 	var currFile string
 	if curr, err := nav.currFile(); err == nil {
-		currFile = curr.path
+		currFile = quoteString(curr.path)
 	}
 
-	currSelections := nav.currSelections()
+	var selections []string
+	for _, selection := range nav.currSelections() {
+		selections = append(selections, quoteString(selection))
+	}
+	currSelections := strings.Join(selections, gOpts.filesep)
 
-	exportFiles(currFile, currSelections, nav.currDir().path)
+	os.Setenv("f", currFile)
+	os.Setenv("fs", currSelections)
+	os.Setenv("PWD", quoteString(nav.currDir().path))
+
+	if len(selections) == 0 {
+		os.Setenv("fx", currFile)
+	} else {
+		os.Setenv("fx", currSelections)
+	}
 }
 
 func (nav *nav) dirPreviewLoop(ui *ui) {
@@ -699,13 +732,12 @@ func (nav *nav) previewLoop(ui *ui) {
 		}
 		win := ui.wins[len(ui.wins)-1]
 		if clear && len(gOpts.previewer) != 0 && len(gOpts.cleaner) != 0 && nav.volatilePreview {
-			nav.exportFiles()
-			exportOpts()
 			cmd := exec.Command(gOpts.cleaner, prev,
 				strconv.Itoa(win.w),
 				strconv.Itoa(win.h),
 				strconv.Itoa(win.x),
-				strconv.Itoa(win.y))
+				strconv.Itoa(win.y),
+				path)
 			if err := cmd.Run(); err != nil {
 				log.Printf("cleaning preview: %s", err)
 			}
@@ -744,8 +776,6 @@ func (nav *nav) previewDir(dir *dir, win *win) {
 	var reader io.Reader
 
 	if len(gOpts.previewer) != 0 {
-		nav.exportFiles()
-		exportOpts()
 		cmd := exec.Command(gOpts.previewer, dir.path,
 			strconv.Itoa(win.w),
 			strconv.Itoa(win.h),
@@ -865,6 +895,22 @@ func (nav *nav) preview(path string, win *win) {
 
 		defer f.Close()
 		reader = f
+	}
+
+	prefix := make([]byte, 2)
+	if gOpts.sixel {
+		n, err := reader.Read(prefix)
+		reader = io.MultiReader(bytes.NewReader(prefix[:n]), reader)
+
+		if err == nil && string(prefix) == gSixelBegin {
+			b, err := io.ReadAll(reader)
+			if err != nil {
+				log.Printf("loading sixel: %s", err)
+			}
+			str := string(b)
+			reg.sixel = &str
+			return
+		}
 	}
 
 	buf := bufio.NewScanner(reader)
@@ -1363,7 +1409,8 @@ func (nav *nav) moveAsync(app *app, srcs []string, dstDir string) {
 			continue
 		}
 
-		dst := filepath.Join(dstDir, filepath.Base(src))
+		file := filepath.Base(src)
+		dst := filepath.Join(dstDir, file)
 
 		dstStat, err := os.Stat(dst)
 		if os.SameFile(srcStat, dstStat) {
@@ -1372,9 +1419,15 @@ func (nav *nav) moveAsync(app *app, srcs []string, dstDir string) {
 			app.ui.exprChan <- echo
 			continue
 		} else if !os.IsNotExist(err) {
+			ext := filepath.Ext(file)
+			basename := filepath.Base(file[:len(file)-len(ext)])
 			var newPath string
 			for i := 1; !os.IsNotExist(err); i++ {
-				newPath = fmt.Sprintf("%s.~%d~", dst, i)
+				file = strings.ReplaceAll(gOpts.dupfilefmt, "%f", basename+ext)
+				file = strings.ReplaceAll(file, "%b", basename)
+				file = strings.ReplaceAll(file, "%e", ext)
+				file = strings.ReplaceAll(file, "%n", strconv.Itoa(i))
+				newPath = filepath.Join(dstDir, file)
 				_, err = os.Lstat(newPath)
 			}
 			dst = newPath

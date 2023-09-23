@@ -112,7 +112,6 @@ func shellCommand(s string, args []string) *exec.Cmd {
 	}
 
 	args = append(gOpts.shellopts, args...)
-
 	return exec.Command(gOpts.shell, args...)
 }
 
@@ -132,7 +131,9 @@ func setDefaults() {
 	gOpts.cmds["doc"] = &execExpr{"!", "%lf% -doc | %PAGER%"}
 	gOpts.keys["<f-1>"] = &callExpr{"doc", nil, 1}
 
-	gOpts.statfmt = "\033[36m%p\033[0m %s %t %L"
+	gOpts.cmds["maps"] = &execExpr{"!", `%lf% -remote "query %id% maps" | %PAGER%`}
+	gOpts.cmds["cmaps"] = &execExpr{"!", `%lf% -remote "query %id% cmaps" | %PAGER%`}
+	gOpts.cmds["cmds"] = &execExpr{"!", `%lf% -remote "query %id% cmds" | %PAGER%`}
 }
 
 func setUserUmask() {}
@@ -176,24 +177,10 @@ func errCrossDevice(err error) bool {
 	return err.(*os.LinkError).Err.(windows.Errno) == 17
 }
 
-func exportFiles(f string, fs []string, pwd string) {
-	envFile := fmt.Sprintf(`"%s"`, f)
-
-	var quotedFiles []string
-	for _, f := range fs {
-		quotedFiles = append(quotedFiles, fmt.Sprintf(`"%s"`, f))
+func quoteString(s string) string {
+	// Windows CMD requires special handling to deal with quoted arguments
+	if strings.ToLower(gOpts.shell) == "cmd" {
+		return fmt.Sprintf(`"%s"`, s)
 	}
-	envFiles := strings.Join(quotedFiles, gOpts.filesep)
-
-	envPWD := fmt.Sprintf(`"%s"`, pwd)
-
-	os.Setenv("f", envFile)
-	os.Setenv("fs", envFiles)
-	os.Setenv("PWD", envPWD)
-
-	if len(fs) == 0 {
-		os.Setenv("fx", envFile)
-	} else {
-		os.Setenv("fx", envFiles)
-	}
+	return s
 }

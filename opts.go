@@ -1,6 +1,9 @@
 package main
 
-import "time"
+import (
+	"path/filepath"
+	"time"
+)
 
 type sortMethod byte
 
@@ -39,6 +42,7 @@ var gOpts struct {
 	dironly          bool
 	dirpreviews      bool
 	drawbox          bool
+	dupfilefmt       string
 	globsearch       bool
 	icons            bool
 	ignorecase       bool
@@ -48,6 +52,7 @@ var gOpts struct {
 	mouse            bool
 	number           bool
 	preview          bool
+	sixel            bool
 	relativenumber   bool
 	smartcase        bool
 	smartdia         bool
@@ -72,11 +77,13 @@ var gOpts struct {
 	infotimefmtnew   string
 	infotimefmtold   string
 	truncatechar     string
+	truncatepct      int
 	ratios           []int
 	hiddenfiles      []string
 	history          bool
 	info             []string
 	ruler            []string
+	rulerfmt         string
 	preserve         []string
 	shellopts        []string
 	keys             map[string]expr
@@ -89,6 +96,91 @@ var gOpts struct {
 	tagfmt           string
 }
 
+var gLocalOpts struct {
+	sortMethods map[string]sortMethod
+	dirfirsts   map[string]bool
+	dironlys    map[string]bool
+	hiddens     map[string]bool
+	reverses    map[string]bool
+	infos       map[string][]string
+}
+
+func localOptPaths(path string) []string {
+	var list []string
+	list = append(list, path)
+	for curr := path; !isRoot(curr); curr = filepath.Dir(curr) {
+		list = append(list, curr+string(filepath.Separator))
+	}
+	return list
+}
+
+func getSortMethod(path string) sortMethod {
+	for _, key := range localOptPaths(path) {
+		if val, ok := gLocalOpts.sortMethods[key]; ok {
+			return val
+		}
+	}
+	return gOpts.sortType.method
+}
+
+func getSortType(path string) sortType {
+	method := getSortMethod(path)
+	option := gOpts.sortType.option
+	for _, key := range localOptPaths(path) {
+		if val, ok := gLocalOpts.dirfirsts[key]; ok {
+			if val {
+				option |= dirfirstSort
+			} else {
+				option &= ^dirfirstSort
+			}
+			break
+		}
+	}
+	for _, key := range localOptPaths(path) {
+		if val, ok := gLocalOpts.hiddens[key]; ok {
+			if val {
+				option |= hiddenSort
+			} else {
+				option &= ^hiddenSort
+			}
+			break
+		}
+	}
+	for _, key := range localOptPaths(path) {
+		if val, ok := gLocalOpts.reverses[key]; ok {
+			if val {
+				option |= reverseSort
+			} else {
+				option &= ^reverseSort
+			}
+			break
+		}
+	}
+	val := sortType{
+		method: method,
+		option: option,
+	}
+	return val
+}
+
+func getDirOnly(path string) bool {
+	for _, key := range localOptPaths(path) {
+		if val, ok := gLocalOpts.dironlys[key]; ok {
+			return val
+		}
+	}
+	return gOpts.dironly
+}
+
+func getInfo(path string) []string {
+	for _, key := range localOptPaths(path) {
+		if val, ok := gLocalOpts.infos[key]; ok {
+			return val
+		}
+	}
+	return gOpts.info
+}
+
 func init() {
 	gOpts.anchorfind = true
 	gOpts.autoquit = false
@@ -97,6 +189,7 @@ func init() {
 	gOpts.dironly = false
 	gOpts.dirpreviews = false
 	gOpts.drawbox = false
+	gOpts.dupfilefmt = "%f.~%n~"
 	gOpts.borderfmt = "\033[0m"
 	gOpts.cursoractivefmt = "\033[7m"
 	gOpts.cursorparentfmt = "\033[7m"
@@ -110,6 +203,7 @@ func init() {
 	gOpts.mouse = false
 	gOpts.number = false
 	gOpts.preview = true
+	gOpts.sixel = false
 	gOpts.relativenumber = false
 	gOpts.smartcase = true
 	gOpts.smartdia = false
@@ -129,15 +223,18 @@ func init() {
 	gOpts.selmode = "all"
 	gOpts.shell = gDefaultShell
 	gOpts.shellflag = gDefaultShellFlag
+	gOpts.statfmt = "\033[36m%p\033[0m| %c| %u| %g| %S| %t| -> %l"
 	gOpts.timefmt = time.ANSIC
 	gOpts.infotimefmtnew = "Jan _2 15:04"
 	gOpts.infotimefmtold = "Jan _2  2006"
 	gOpts.truncatechar = "~"
+	gOpts.truncatepct = 100
 	gOpts.ratios = []int{1, 2, 3}
 	gOpts.hiddenfiles = []string{".*"}
 	gOpts.history = true
 	gOpts.info = nil
-	gOpts.ruler = []string{"acc", "progress", "selection", "filter", "ind"}
+	gOpts.ruler = nil
+	gOpts.rulerfmt = "  %a|  %p|  \033[7;31m %m \033[0m|  \033[7;33m %c \033[0m|  \033[7;35m %s \033[0m|  \033[7;34m %f \033[0m|  %i/%t"
 	gOpts.preserve = []string{"mode"}
 	gOpts.shellopts = nil
 	gOpts.sortType = sortType{naturalSort, dirfirstSort}
@@ -260,10 +357,22 @@ func init() {
 	gOpts.cmdkeys["<c-delete>"] = &callExpr{"cmd-delete-word", nil, 1}
 	gOpts.cmdkeys["<c-up>"] = &callExpr{"cmd-uppercase-word", nil, 1}
 	gOpts.cmdkeys["<c-down>"] = &callExpr{"cmd-lowercase-word", nil, 1}
+	gOpts.cmdkeys["<a-d>"] = &callExpr{"cmd-delete-word", nil, 1}
+	gOpts.cmdkeys["<a-backspace>"] = &callExpr{"cmd-delete-word-back", nil, 1}
+	gOpts.cmdkeys["<a-backspace2>"] = &callExpr{"cmd-delete-word-back", nil, 1}
+	gOpts.cmdkeys["<a-u>"] = &callExpr{"cmd-uppercase-word", nil, 1}
+	gOpts.cmdkeys["<a-l>"] = &callExpr{"cmd-lowercase-word", nil, 1}
 	gOpts.cmdkeys["<a-t>"] = &callExpr{"cmd-transpose-word", nil, 1}
 
 	gOpts.cmds = make(map[string]expr)
 	gOpts.user = make(map[string]string)
+
+	gLocalOpts.sortMethods = make(map[string]sortMethod)
+	gLocalOpts.dirfirsts = make(map[string]bool)
+	gLocalOpts.dironlys = make(map[string]bool)
+	gLocalOpts.hiddens = make(map[string]bool)
+	gLocalOpts.reverses = make(map[string]bool)
+	gLocalOpts.infos = make(map[string][]string)
 
 	setDefaults()
 }

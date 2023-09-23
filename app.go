@@ -35,6 +35,7 @@ type app struct {
 	menuCompActive bool
 	menuComps      []string
 	menuCompInd    int
+	selectionOut   []string
 }
 
 func newApp(ui *ui, nav *nav) *app {
@@ -330,19 +331,6 @@ func (app *app) loop() {
 
 			log.Print("bye!")
 
-			if gLastDirPath != "" {
-				f, err := os.Create(gLastDirPath)
-				if err != nil {
-					log.Printf("opening last dir file: %s", err)
-				}
-				defer f.Close()
-
-				_, err = f.WriteString(app.nav.currDir().path)
-				if err != nil {
-					log.Printf("writing last dir file: %s", err)
-				}
-			}
-
 			return
 		case n := <-app.nav.copyBytesChan:
 			app.nav.copyBytes += n
@@ -541,6 +529,13 @@ func (app *app) runShell(s string, args []string, prefix string) {
 		args = parseArgs(s)
 		s = ""
 	}
+	gState.mutex.Lock()
+	gState.data["maps"] = listBinds(gOpts.keys).String()
+	gState.data["cmaps"] = listBinds(gOpts.cmdkeys).String()
+	gState.data["cmds"] = listCmds().String()
+	gState.data["jumps"] = listJumps(app.nav.jumpList, app.nav.jumpListInd).String()
+	gState.data["history"] = listHistory(app.cmdHistory).String()
+	gState.mutex.Unlock()
 
 	cmd := shellCommand(s, args)
 
@@ -549,7 +544,7 @@ func (app *app) runShell(s string, args []string, prefix string) {
 	switch prefix {
 	case "$", "!":
 		cmd.Stdin = os.Stdin
-		cmd.Stdout = os.Stdout
+		cmd.Stdout = os.Stderr
 		cmd.Stderr = os.Stderr
 
 		app.runCmdSync(cmd, prefix == "!")
@@ -621,21 +616,8 @@ func (app *app) runShell(s string, args []string, prefix string) {
 			if err := cmd.Wait(); err != nil {
 				log.Printf("running shell: %s", err)
 			}
+			app.ui.exprChan <- &callExpr{"load", nil, 1}
 		}()
 	}
 
-}
-
-func (app *app) runPagerOn(stdin io.Reader) {
-	app.nav.exportFiles()
-	app.ui.exportSizes()
-	exportOpts()
-
-	cmd := shellCommand(envPager, nil)
-
-	cmd.Stdin = stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	app.runCmdSync(cmd, false)
 }

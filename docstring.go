@@ -83,10 +83,6 @@ The following commands are provided by lf:
     mark-remove    (modal)   (default '"')
     tag
     tag-toggle               (default 't')
-    maps
-    cmaps
-    cmds
-    jumps
 
 The following command line commands are provided by lf:
 
@@ -114,6 +110,7 @@ The following command line commands are provided by lf:
     cmd-word                 (default '<a-f>')
     cmd-word-back            (default '<a-b>')
     cmd-delete-word          (default '<a-d>')
+    cmd-delete-word-back     (default '<a-backspace>' and '<a-backspace2>')
     cmd-capitalize-word      (default '<a-c>')
     cmd-uppercase-word       (default '<a-u>')
     cmd-lowercase-word       (default '<a-l>')
@@ -133,6 +130,7 @@ The following options can be used to customize the behavior of lf:
     dironly          bool      (default false)
     dirpreviews      bool      (default false)
     drawbox          bool      (default false)
+    dupfilefmt       string    (default '%f.~%n~')
     errorfmt         string    (default "\033[7;31;47m")
     filesep          string    (default "\n")
     findlen          int       (default 1)
@@ -161,20 +159,23 @@ The following options can be used to customize the behavior of lf:
     relativenumber   bool      (default false)
     reverse          bool      (default false)
     ruler            []string  (default 'acc:progress:selection:filter:ind')
+    rulerfmt         string    (default "  %a|  %p|  \033[7;31m %m \033[0m|  \033[7;33m %c \033[0m|  \033[7;35m %s \033[0m|  \033[7;34m %f \033[0m|  %i/%t")
     scrolloff        int       (default 0)
     selmode          string    (default 'all')
     shell            string    (default 'sh' for Unix and 'cmd' for Windows)
     shellflag        string    (default '-c' for Unix and '/c' for Windows)
     shellopts        []string  (default '')
+    sixel            bool      (default false)
     smartcase        bool      (default true)
     smartdia         bool      (default false)
     sortby           string    (default 'natural')
-    statfmt          string    (default "\033[36m%p\033[0m %c %u %g %s %t %L")
+    statfmt          string    (default "\033[36m%p\033[0m| %c| %u| %g| %S| %t| -> %l")
     tabstop          int       (default 8)
     tagfmt           string    (default "\033[31m")
     tempmarks        string    (default '')
     timefmt          string    (default 'Mon Jan _2 15:04:05 2006')
     truncatechar     string    (default '~')
+    truncatepct      int       (default 100)
     waitmsg          string    (default 'Press any key to continue')
     wrapscan         bool      (default true)
     wrapscroll       bool      (default false)
@@ -215,13 +216,27 @@ when defined:
 
 The following commands/keybindings are provided by default:
 
-    Unix                          Windows
-    cmd open &$OPENER "$f"        cmd open &%OPENER% %f%
-    map e $$EDITOR "$f"           map e $%EDITOR% %f%
-    map i $$PAGER "$f"            map i !%PAGER% %f%
-    map w $$SHELL                 map w $%SHELL%
-    cmd doc $$lf -doc | $PAGER    cmd doc !%lf% -doc | %PAGER%
-    map <f-1> doc                 map <f-1> doc
+    Unix
+    cmd open &$OPENER "$f"
+    map e $$EDITOR "$f"
+    map i $$PAGER "$f"
+    map w $$SHELL
+    cmd doc $$lf -doc | $PAGER
+    map <f-1> doc
+    cmd maps $lf -remote "query $id maps" | $PAGER
+    cmd cmaps $lf -remote "query $id cmaps" | $PAGER
+    cmd cmds $lf -remote "query $id cmds" | $PAGER
+
+    Windows
+    cmd open &%OPENER% %f%
+    map e $%EDITOR% %f%
+    map i !%PAGER% %f%
+    map w $%SHELL%
+    cmd doc !%lf% -doc | %PAGER%
+    map <f-1> doc
+    cmd maps !%lf% -remote "query %id% maps" | %PAGER%
+    cmd cmaps !%lf% -remote "query %id% cmaps" | %PAGER%
+    cmd cmds !%lf% -remote "query %id% cmds" | %PAGER%
 
 The following additional keybindings are provided by default:
 
@@ -292,17 +307,25 @@ History file should be located at:
     Unix     ~/.local/share/lf/history
     Windows  C:\Users\<user>\AppData\Local\lf\history
 
-You can configure the default values of following variables to change these
-locations:
+You can configure these locations with the following variables given with their
+order of precedences and their default values:
 
     Unix
-        $XDG_CONFIG_HOME  ~/.config
-        $XDG_DATA_HOME    ~/.local/share
+        $LF_CONFIG_HOME
+        $XDG_CONFIG_HOME
+        ~/.config
+
+        $LF_DATA_HOME
+        $XDG_DATA_HOME
+        ~/.local/share
 
     Windows
-        %ProgramData%     C:\ProgramData
-        %LOCALAPPDATA%    C:\Users\<user>\AppData\Local
-        %LF_CONFIG_HOME%  If set, use this value instead of %LOCALAPPDATA%
+        %ProgramData%
+        C:\ProgramData
+
+        %LF_CONFIG_HOME%
+        %LOCALAPPDATA%
+        C:\Users\<user>\AppData\Local
 
 A sample configuration file can be found at
 https://github.com/gokcehan/lf/blob/master/etc/lfrc.example
@@ -649,28 +672,15 @@ Move the cursor by one word in forward/backward direction.
 
 Delete the next word in forward direction.
 
+    cmd-delete-word-back     (default '<a-backspace>' and '<a-backspace2>')
+
+Delete the previous word in backward direction.
+
     cmd-capitalize-word      (default '<a-c>')
     cmd-uppercase-word       (default '<a-u>')
     cmd-lowercase-word       (default '<a-l>')
 
 Capitalize/uppercase/lowercase the current word and jump to the next word.
-
-    maps
-    cmaps
-
-List all key mappings in normal mode or command-line editing mode.
-
-    cmds
-
-List all custom commands defined using the 'cmd' command
-
-    jumps
-
-List the contents of the jump list, in order of the most recently visited
-locations. Each location is marked with the count that can be used with the
-'jump-prev' and 'jump-next' commands (e.g. use '3[' to move three spaces
-backwards in the jump list). A '>' is used to mark the current location in the
-jump list.
 
 # Options
 
@@ -694,10 +704,11 @@ Format string of the box drawing characters enabled by the 'drawbox' option.
 
 Set the path of a cleaner file. The file should be executable. This file is
 called if previewing is enabled, the previewer is set, and the previously
-selected file had its preview cache disabled. Five arguments are passed to the
-file, (1) current file name, (2) width, (3) height, (4) horizontal position,
-and (5) vertical position of preview pane respectively. Preview clearing is
-disabled when the value of this option is left empty.
+selected file had its preview cache disabled. The following arguments are passed
+to the file, (1) current file name, (2) width, (3) height, (4) horizontal
+position, (5) vertical position of preview pane and (6) next file name to be
+previewed respectively. Preview cleaning is disabled when the value of this
+option is left empty.
 
     cursoractivefmt   string    (default "\033[7m")
     cursorparentfmt   string    (default "\033[7m")
@@ -751,6 +762,14 @@ custom previews for directories.
     drawbox        bool      (default false)
 
 Draw boxes around panes with box drawing characters.
+
+    dupfilefmt        string      (default '%f.~%n~')
+
+Format string of file name when creating duplicate files. With the default
+format, copying a file 'abc.txt' to the same directory will result in a
+duplicate file called 'abc.txt.~1~'. Special expansions are provided, '%f' as
+the file name, '%b' for basename (file name without extension), '%e' as the
+extension (including the dot) and '%n' as the number of duplicates.
 
     errorfmt       string    (default "\033[7;31;47m")
 
@@ -868,8 +887,8 @@ zero.
 
 List of attributes that are preserved when copying files. Currently supported
 attributes are 'mode' (i.a. access mode) and 'timestamps' (i.e. modification
-time and access time). Note: Preserving other attribute like ownership of
-change/birth timestamp is desireable, but not portably supported in go.
+time and access time). Note, preserving other attribute like ownership of
+change/birth timestamp is desirable, but not portably supported in Go.
 
     preview        bool      (default true)
 
@@ -881,8 +900,8 @@ files and displayed as 'binary'.
     previewer      string    (default '') (not filtered if empty)
 
 Set the path of a previewer file to filter the content of regular files for
-previewing. The file should be executable. Five arguments are passed to the
-file, (1) current file name, (2) width, (3) height, (4) horizontal position,
+previewing. The file should be executable. The following arguments are passed to
+the file, (1) current file name, (2) width, (3) height, (4) horizontal position,
 and (5) vertical position of preview pane respectively. SIGPIPE signal is sent
 when enough lines are read. If the previewer returns a non-zero exit code,
 then the preview cache for the given file is disabled. This means that if the
@@ -918,6 +937,7 @@ Reverse the direction of sort.
 
     ruler          []string  (default 'acc:progress:selection:filter:ind')
 
+This option is deprecated in favor of using the 'rulerfmt' option (see below).
 List of information shown in status line ruler. Currently supported information
 types are 'acc', 'progress', 'selection', 'filter', 'ind', 'df' and names
 starting with 'lf_'. 'acc' shows the pressed keys (e.g. for bindings with
@@ -932,6 +952,22 @@ displaying the current settings (e.g. 'lf_selmode' displays the current setting
 for the 'selmode' option). User defined options starting with 'lf_user_' are
 also supported, so it is possible to display information set from external
 sources.
+
+    rulerfmt       string    (default "  %a|  %p|  \033[7;31m %m \033[0m|  \033[7;33m %c \033[0m|  \033[7;35m %s \033[0m|  \033[7;34m %f \033[0m|  %i/%t")
+
+Format string of the ruler shown in the bottom right corner. Special expansions
+are provided, '%a' as the pressed keys, '%p' as the progress of file operations,
+'%m' as the number of files to be cut (moved), '%c' as the number of files to
+be copied, '%s' as the number of selected files, '%f' as the filter, '%i' as
+the position of the cursor, '%t' as the number of files shown in the current
+directory, '%h' as the number of files hidden in the current directory, and '%d'
+as the amount of free disk space remaining. Additional expansions are provided
+for environment variables exported by lf, in the form '%{lf_<name>}' (e.g.
+'%{lf_selmode}'). This is useful for displaying the current settings. Expansions
+are also provided for user defined options, in the form '%{lf_user_<name>}'
+(e.g. '%{lf_user_foo}'). The '|' character splits the format string into
+sections. Any section containing a failed expansion (result is a blank string)
+is discarded and not shown.
 
     selmode        string    (default 'all')
 
@@ -960,6 +996,10 @@ Command line flag used to pass shell commands.
 
 List of shell options to pass to the shell executable.
 
+    sixel          bool      (default false)
+
+Render sixel images in preview.
+
     smartcase      bool      (default true)
 
 Override 'ignorecase' option when the pattern contains an uppercase character.
@@ -975,16 +1015,15 @@ diacritic. This option has no effect when 'ignoredia' is disabled.
 Sort type for directories. Currently supported sort types are 'natural', 'name',
 'size', 'time', 'ctime', 'atime', and 'ext'.
 
-    statfmt    string    (default "\033[36m%p\033[0m %c %u %g %s %t %L")
+    statfmt    string        (default "\033[36m%p\033[0m| %c| %u| %g| %S| %t| -> %l")
 
 Format string of the file info shown in the bottom left corner. Special
 expansions are provided, '%p' as the file permissions, '%c' as the link count,
-'%u' as the user, '%g' as the group, '%s' as the file size, '%t' as the last
-modified time, and '%l' as the link target if it exists (otherwise a blank
-string). '%L' is the same as '%l' but with an arrow '-> ' prepended. On Windows,
-the link count, user and group fields are not supported and will be replaced
-with a blank string if specified. The default for Windows is "\033[36m%p\033[0m
-%s %t %L".
+'%u' as the user, '%g' as the group, '%s' as the file size, '%S' as the file
+size but with a fixed width of four characters (left-padded with spaces), '%t'
+as the last modified time, and '%l' as the link target. The '|' character splits
+the format string into sections. Any section containing a failed expansion
+(result is a blank string) is discarded and not shown.
 
     tabstop        int       (default 8)
 
@@ -1012,6 +1051,22 @@ Format string of the file modification time shown in the bottom line.
     truncatechar   string    (default '~')
 
 Truncate character shown at the end when the file name does not fit to the pane.
+
+    truncatepct  int       (default 100)
+
+When a filename is too long to be shown completely, the available space is
+partitioned in two pieces. truncatepct defines a fraction (in percent between
+0 and 100) for the size of the first piece, which will show the beginning of
+the filename. The second piece will show the end of the filename and will use
+the rest of the available space. Both pieces are separated by the truncation
+character (truncatechar). A value of 100 will only show the beginning of the
+filename, while a value of 0 will only show the end of the filename, e.g.:
+
+- 'set truncatepct 100' -> "very-long-filename-tr~" (default)
+
+- 'set truncatepct 50' -> "very-long-f~-truncated"
+
+- 'set truncatepct 0' -> "~ng-filename-truncated"
 
     waitmsg        string    (default 'Press any key to continue')
 
@@ -1172,8 +1227,8 @@ Characters from '#' to newline are comments and ignored:
 
     # comments start with '#'
 
-There are four special commands ('set', 'map', 'cmap', and 'cmd') for
-configuration.
+There are five special commands ('set', 'setlocal', 'map', 'cmap', and 'cmd')
+for configuration.
 
 Command 'set' is used to set an option which can be boolean, integer, or string:
 
@@ -1186,6 +1241,23 @@ Command 'set' is used to set an option which can be boolean, integer, or string:
     set sortby time    # string value w/o quotes
     set sortby 'time'  # string value with single quotes (whitespaces)
     set sortby "time"  # string value with double quotes (backslash escapes)
+
+Command 'setlocal' is used to set a local option for a directory which can be
+boolean or string. Currently supported local options are 'dirfirst', 'dironly',
+'hidden', 'info', 'reverse', and 'sortby'. Adding a trailing path separator
+(i.e. '/' for Unix and '\' for Windows) sets the option for the given directory
+along with its subdirectories:
+
+    setlocal /foo/bar hidden         # boolean enable
+    setlocal /foo/bar hidden true    # boolean enable
+    setlocal /foo/bar nohidden       # boolean disable
+    setlocal /foo/bar hidden false   # boolean disable
+    setlocal /foo/bar hidden!        # boolean toggle
+    setlocal /foo/bar sortby time    # string value w/o quotes
+    setlocal /foo/bar sortby 'time'  # string value with single quotes (whitespaces)
+    setlocal /foo/bar sortby "time"  # string value with double quotes (backslash escapes)
+    setlocal /foo/bar  hidden        # for only '/foo/bar' directory
+    setlocal /foo/bar/ hidden        # for '/foo/bar' and its subdirectories (e.g. '/foo/bar/baz')
 
 Command 'map' is used to bind a key to a command which can be builtin command,
 custom command, or shell command:
@@ -1461,9 +1533,36 @@ respect to the terminal width as follows:
         fi
     }}
 
-Besides 'send' command, there is a 'quit' command to quit the server when there
-are no connected clients left, and a 'quit!' command to force quit the server by
-closing client connections first:
+In addition, the 'query' command can be used to obtain information about a
+specific lf instance by providing its id:
+
+    lf -remote "query $id maps"
+
+The following types of information are supported:
+
+    maps     list of mappings created by the 'map' command
+    cmaps    list of mappings created by the 'cmap' command
+    cmds     list of commands created by the 'cmd' command
+    jumps    contents of the jump list, showing previously visited locations
+    history  list of previously executed commands on the command line
+
+This is useful for scripting actions based on the internal state of lf.
+For example, to select a previous command using fzf and execute it:
+
+    map <a-h> ${{
+    	clear
+    	cmd=$(
+    		lf -remote "query $id history" |
+    		awk -F'\t' 'NR > 1 { print $NF}' |
+    		sort -u |
+    		fzf --reverse --prompt='Execute command: '
+    	)
+    	lf -remote "send $id $cmd"
+    }}
+
+There is also a 'quit' command to quit the server when there are no connected
+clients left, and a 'quit!' command to force quit the server by closing client
+connections first:
 
     lf -remote 'quit'
     lf -remote 'quit!'
@@ -1683,15 +1782,17 @@ and the directory is changed. You can define it just as you would define any
 other command:
 
     cmd on-cd &{{
+        bash -c '
         # display git repository status in your prompt
         source /usr/share/git/completion/git-prompt.sh
         GIT_PS1_SHOWDIRTYSTATE=auto
         GIT_PS1_SHOWSTASHSTATE=auto
         GIT_PS1_SHOWUNTRACKEDFILES=auto
         GIT_PS1_SHOWUPSTREAM=auto
-        git=$(__git_ps1 " (%s)") || true
+        git=$(__git_ps1 " (%s)")
         fmt="\033[32;1m%u@%h\033[0m:\033[34;1m%d\033[0m\033[1m%f$git\033[0m"
         lf -remote "send $id set promptfmt \"$fmt\""
+        '
     }}
 
 If you want to print escape sequences, you may redirect 'printf' output to
