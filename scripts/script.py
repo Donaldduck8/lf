@@ -70,7 +70,7 @@ def preview_hex_dump(path, buf, window_width, window_height, window_x, window_y)
     start = time.time()
     import refinery.lib.meta
 
-    window_height -= 2
+    window_height -= 1
 
     address_width = 4
     column_separator = f"{SEPARATOR_COLOR} │ {RESET}"
@@ -129,7 +129,6 @@ def preview_hex_dump(path, buf, window_width, window_height, window_x, window_y)
     separator_line_buf += RESET
 
     print(separator_line_buf)
-    window_height -= 1
 
     for line_number in range(window_height):
         line_buf = ""
@@ -179,8 +178,9 @@ def preview_hex_dump(path, buf, window_width, window_height, window_x, window_y)
 
 def lf_remote(remote_command: str, shell=False):
     import subprocess
+    # DO NOT PRINT ANYTHING AT ALL IF YOU ARE USING THIS
     args = ["lf", "-remote", remote_command]
-    p = subprocess.run(args, shell=shell)
+    p = subprocess.run(args, shell=False)
 
 def handle_command(command, selected_path, extra_arguments):
     if os.path.isdir(selected_path):
@@ -220,25 +220,25 @@ def handle_command(command, selected_path, extra_arguments):
         new_file_path = os.path.join(folder_path, new_file_name)
 
         if os.path.exists(new_file_path):
-            lf_remote(f'send echo {FAILURE_COLOR}The requested file {HIGHLIGHT_COLOR}{new_file_name} {FAILURE_COLOR}already exists!{RESET}')
+            lf_remote(f'send echo {FAILURE_COLOR}The requested file {HIGHLIGHT_COLOR}{new_file_name} {FAILURE_COLOR}already exists!')
             return
 
         with open(new_file_path, "wb+") as new_file_f:
             pass
 
-        lf_remote(f'send echo {SUCCESS_COLOR}Created {HIGHLIGHT_COLOR}{new_file_name} {SUCCESS_COLOR}successfully!{RESET}')
+        lf_remote(f'send echo {SUCCESS_COLOR}Created {HIGHLIGHT_COLOR}{new_file_name} {SUCCESS_COLOR}successfully!')
 
     elif command == "create-dir":
         new_folder_name = input("Enter a folder name: ")
         new_folder_path = os.path.join(folder_path, new_folder_name)
 
         if os.path.exists(new_folder_path):
-            lf_remote(f'send echo {FAILURE_COLOR}The requested folder {HIGHLIGHT_COLOR}{new_folder_name} {FAILURE_COLOR}already exists!{RESET}')
+            lf_remote(f'send echo {FAILURE_COLOR}The requested folder {HIGHLIGHT_COLOR}{new_folder_name} {FAILURE_COLOR}already exists!')
             return
 
         os.makedirs(new_folder_path)
 
-        lf_remote(f'send echo {SUCCESS_COLOR}Created {HIGHLIGHT_COLOR}{new_folder_name} {SUCCESS_COLOR}successfully!{RESET}')
+        lf_remote(f'send echo {SUCCESS_COLOR}Created {HIGHLIGHT_COLOR}{new_folder_name} {SUCCESS_COLOR}successfully!')
 
 if __name__ == "__main__":
     try:
@@ -254,5 +254,3 @@ if __name__ == "__main__":
         import traceback
         print(traceback.format_exc())
     GLOBAL_END = time.time()
-
-    print(f"Total Python time: {(GLOBAL_END - GLOBAL_START) * 1000}ms")
